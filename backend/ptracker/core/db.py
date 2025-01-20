@@ -6,6 +6,8 @@ from sqlmodel import (
     select,
 )
 
+import logging
+
 from ptracker.api.models import (
     Candidate,
     Promise,
@@ -14,6 +16,7 @@ from ptracker.api.models import (
 from ptracker.core.settings import settings
 
 engine = create_engine(settings.SUPABASE_URL.format(key=settings.SUPABASE_KEY))
+logger = logging.getLogger(__name__)
 
 
 def init_db(session: Session) -> None:
@@ -45,6 +48,8 @@ def init_db(session: Session) -> None:
         session.refresh(promise)
         session.refresh(candidate)
 
-        print(f"Seeded database with candidate {candidate}.")
-        print(f"Seeded database with promise {promise}.")
-        print(f"Seeded database with source {source}.")
+        logger.info(f"Seeded database with candidate {candidate}.")
+        logger.info(f"Seeded database with promise {promise}.")
+        logger.info(f"Seeded database with source {source}.")
+    else:
+        logger.info("Queried database found to have non-empty candidates table, so skipping seed process.")

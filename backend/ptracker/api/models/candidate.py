@@ -1,8 +1,6 @@
 from sqlmodel import Field, Relationship, SQLModel
 from typing import Union
 
-import re
-
 from ptracker.api.models._associations import SourceCandidateLink
 
 

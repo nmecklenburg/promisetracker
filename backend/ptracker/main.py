@@ -13,7 +13,7 @@ controller = FastAPI(
             "name": "Apache 2.0",
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    openapi_url=f"{settings.API_VERSION_STRING}/openapi.json",
 )
 
 if settings.all_cors_origins:

@@ -1,4 +1,5 @@
 #!/usr/bin/bash
-set -u
+
+python ptracker/seed.py
 
 fastapi dev main.py
