@@ -2,3 +2,4 @@ Metadata-Version: 2.2
 Name: ptracker
 Version: 0.1
 Requires-Python: <4.0,>=3.10
+Requires-Dist: psycopg2

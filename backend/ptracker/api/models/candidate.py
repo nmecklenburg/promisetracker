@@ -1,12 +1,14 @@
 from sqlmodel import Field, Relationship, SQLModel
 from typing import Union
 
+import re
+
 from ptracker.api.models._associations import SourceCandidateLink
 
 
 class CandidateBase(SQLModel):
-    name: str
-    description: str
+    name: str = Field(min_length=2, max_length=128)
+    description: str = Field(max_length=500)
 
 
 class CandidateCreate(CandidateBase):

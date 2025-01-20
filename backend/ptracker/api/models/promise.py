@@ -6,9 +6,10 @@ from ptracker.api.models._associations import SourcePromiseLink
 
 
 class PromiseBase(SQLModel):
-    candidate_id: int = Field(foreign_key="candidate.id")
-    text: str
     _timestamp: datetime
+    candidate_id: int = Field(foreign_key="candidate.id")
+    status: int
+    text: str
 
 
 class PromiseCreate(PromiseBase):

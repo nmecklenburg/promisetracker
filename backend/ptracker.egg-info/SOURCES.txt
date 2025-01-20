@@ -5,6 +5,7 @@ ptracker/models.py
 ptracker.egg-info/PKG-INFO
 ptracker.egg-info/SOURCES.txt
 ptracker.egg-info/dependency_links.txt
+ptracker.egg-info/requires.txt
 ptracker.egg-info/top_level.txt
 ptracker/api/__init__.py
 ptracker/api/main.py
