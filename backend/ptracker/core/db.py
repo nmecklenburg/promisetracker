@@ -1,10 +1,12 @@
 from datetime import datetime
+from fastapi import Depends
 from sqlmodel import (
     Session,
     SQLModel,
     create_engine,
     select,
 )
+from typing import Annotated, Generator
 
 import logging
 
@@ -17,6 +19,14 @@ from ptracker.core.settings import settings
 
 engine = create_engine(settings.SUPABASE_URL.format(key=settings.SUPABASE_KEY))
 logger = logging.getLogger(__name__)
+
+
+def get_db() -> Generator[Session, None, None]:
+    with Session(engine) as session:
+        yield session
+
+
+SessionArg = Annotated[Session, Depends(get_db)]
 
 
 def init_db(session: Session) -> None:

@@ -14,6 +14,7 @@ controller = FastAPI(
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
     openapi_url=f"{settings.API_VERSION_STRING}/openapi.json",
+    debug=True,  # TODO nmecklenburg - make this configurable
 )
 
 if settings.all_cors_origins:
