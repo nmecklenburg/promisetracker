@@ -1,5 +1,14 @@
-from pydantic import computed_field
+from pydantic import AnyUrl, BeforeValidator, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Annotated, Any
+
+
+def parse_cors(v: Any) -> list[str] | str:
+    if isinstance(v, str) and not v.startswith("["):
+        return [i.strip() for i in v.split(",")]
+    elif isinstance(v, list | str):
+        return v
+    raise ValueError(v)
 
 
 class Settings(BaseSettings):
@@ -16,7 +25,7 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str
 
     FRONTEND_HOST: str = "http://localhost:5173"
-    BACKEND_CORS_ORIGINS: list[str] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
     SUPABASE_URL: str
     SUPABASE_KEY: str

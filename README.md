@@ -9,3 +9,6 @@ TODOs
 
 Deployment
 - likely going to need to modify domain/host info
+
+useful for local dev:
+`set -o allexport && source .env && set +o allexport`
