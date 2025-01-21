@@ -30,7 +30,7 @@ SessionArg = Annotated[Session, Depends(get_db)]
 
 
 def init_db(session: Session) -> None:
-    # Create candidates, promises, sources, and links tables.
+    # Create candidates, promises, citations, and links tables.
     SQLModel.metadata.create_all(engine)
 
     query = select(Candidate)

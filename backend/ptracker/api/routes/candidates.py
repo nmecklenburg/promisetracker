@@ -87,3 +87,9 @@ def _get_promise_ids_helper(session: Session, candidate_id: int) -> list[int]:
     query = select(Promise.id).where(Promise.candidate_id == candidate_id)
     promise_ids = session.exec(query).all()
     return cast(list[int], promise_ids)
+
+
+@router.post("/{cid}/sources", response_model=CandidatePublic)
+def add_candidate_sources(session: SessionArg, cid: int, sources: list[str]):
+    # Main entrypoint to do promise extraction.
+    pass
