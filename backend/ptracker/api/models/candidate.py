@@ -17,7 +17,7 @@ class CandidateUpdate(SQLModel):
 
 class Candidate(CandidateBase, table=True):
     id: int = Field(default=None, primary_key=True)
-    promises: list["Promise"] = Relationship(back_populates="candidate")  # noqa: F821
+    promises: list["Promise"] = Relationship(back_populates="candidate", cascade_delete=True)  # noqa: F821
 
 
 class CandidatePublic(CandidateBase):
