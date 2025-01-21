@@ -2,8 +2,18 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import col, func, select
 from typing import Any
 
-from ptracker.api.models import Candidate, CandidatePublic, CandidatesPublic, Promise
+from ptracker.api.models import (
+    Candidate,
+    CandidateCreate,
+    CandidatePublic,
+    CandidateUpdate,
+    CandidatesPublic,
+    Promise,
+    Source,
+    SourceCreate,
+)
 from ptracker.api.models._associations import SourceCandidateLink
+from ptracker.api.routes.sources import _create_source_helper
 from ptracker.core.db import SessionArg
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
@@ -42,10 +52,10 @@ def read_candidates(session: SessionArg, after: int = 0, limit: int = 100) -> An
 
     response_candidates = []
     for candidate in candidates:
-        kwargs = candidate.dict()
-        kwargs["promises"] = pc_map[candidate.id]
-        kwargs["sources"] = sc_map[candidate.id]
-        response_candidates.append(CandidatePublic(**kwargs))
+        response_candidate = CandidatePublic.model_validate(candidate,
+                                                            update={"promises": pc_map.get(candidate.id, []),
+                                                                    "sources": sc_map.get(candidate.id, [])})
+        response_candidates.append(response_candidate)
 
     return CandidatesPublic(data=response_candidates, count=count)
 
@@ -65,13 +75,31 @@ def read_candidate(session: SessionArg, cid: int) -> Any:
     query = select(SourceCandidateLink.source_id).where(SourceCandidateLink.candidate_id == candidate.id)
     source_ids = session.exec(query).all()
 
-    public_kwargs = candidate.dict()
-    public_kwargs["promises"] = promise_ids
-    public_kwargs["sources"] = source_ids
-    return CandidatePublic(**public_kwargs)
+    return CandidatePublic.model_validate(candidate, update={"promises": promise_ids, "sources": source_ids})
 
 
-# @router.post("/{cid}", response_model=CandidatePublic)
-# def create_candidate(session)
+@router.post("/", response_model=CandidatePublic)
+def create_candidate(session: SessionArg, candidate_in: CandidateCreate) -> Any:
+    sources = []
+    for source_or_id in candidate_in.sources:
+        if isinstance(source_or_id, SourceCreate):
+            sources.append(_create_source_helper(session, source_or_id))
+        elif isinstance(source_or_id, int):
+            this_source = session.get(Source, source_or_id)
+            if not this_source:
+                return HTTPException(status_code=400, detail=f"Tried to create candidate with a nonexistent source. "
+                                                             f"Source with id {source_or_id} not found.")
+            sources.append(this_source)
 
-# TODO nmecklenburg - what does workflow look like for inserting candidates, promises, sources, etc.
+    candidate = Candidate.model_validate(candidate_in, update={"sources": sources})
+    session.add(candidate)
+    session.commit()
+    session.refresh(candidate)
+
+    return CandidatePublic.model_validate(candidate, update={"sources": [s.id for s in sources],
+                                                             "promises": []})
+
+
+@router.patch("/{cid}", response_model=CandidatePublic)
+def update_candidate(session: SessionArg, candidate_in: CandidateUpdate) -> Any:
+    pass

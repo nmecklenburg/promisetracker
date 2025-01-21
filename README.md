@@ -17,3 +17,5 @@ debugging:
 - instead of fastapi dev ptracker/main.py, can run `uvicorn ptracker.main:controller --host="0.0.0.0" --port=8000 --log-level=debug`
 
 resolve all the todos in code, too.
+
+browser for simple api testing, though postman for best functionality

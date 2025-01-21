@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
-from ptracker.api.routes import candidates
+from ptracker.api.routes import candidates, sources
 
 api_router = APIRouter()
 api_router.include_router(candidates.router)
+api_router.include_router(sources.router)
