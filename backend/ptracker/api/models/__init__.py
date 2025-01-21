@@ -1,5 +1,5 @@
 from .candidate import Candidate, CandidateCreate, CandidatePublic, CandidatesPublic, CandidateUpdate
-from .promise import Promise, PromiseCreate
+from .promise import Promise, PromiseCreate, PromisePublic, PromisesPublic, PromiseUpdate
 from .citation import Citation, CitationCreate
 
 
