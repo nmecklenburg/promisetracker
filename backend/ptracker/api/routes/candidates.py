@@ -9,8 +9,10 @@ from ptracker.api.models import (
     CandidateUpdate,
     CandidatesPublic,
     Promise,
+    SourceRequest
 )
 from ptracker.core.db import SessionArg
+from ptracker.core.source_analyzer import extract_promises
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
@@ -88,7 +90,8 @@ def _get_promise_ids_helper(session: Session, candidate_id: int) -> list[int]:
     return cast(list[int], promise_ids)
 
 
-@router.post("/{cid}/sources", response_model=CandidatePublic)
-def add_candidate_sources(session: SessionArg, cid: int, sources: list[str]):
+@router.post("/{cid}/sources")  #, response_model=CandidatePublic)
+def add_candidate_sources(session: SessionArg, cid: int, sources: SourceRequest):
     # Main entrypoint to do promise extraction.
-    pass
+    promise_creation_jsons: list[dict] = extract_promises(cast(list[str], sources.urls))
+    return {"Hello": "World!", "sources": sources}
