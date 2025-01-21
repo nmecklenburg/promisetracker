@@ -2,4 +2,4 @@
 
 python ptracker/seed.py
 
-fastapi dev main.py
+fastapi dev ptracker/main.py

@@ -13,7 +13,7 @@ import logging
 from ptracker.api.models import (
     Candidate,
     Promise,
-    Source
+    Citation,
 )
 from ptracker.core.settings import settings
 
@@ -38,28 +38,28 @@ def init_db(session: Session) -> None:
 
     # Seed the database with some entries if it's empty.
     if not results.all():
-        source = Source(creation_date=datetime.now(),
-                        url="https://www.nytimes.com/2024/09/26/us/politics/harris-trump-economy.html",
-                        title="Harris Now Has an Economic Plan. Can It Best Trump's Promises?")
+        citation = Citation(date=datetime.now(),
+                            url="https://www.nytimes.com/2024/09/26/us/politics/harris-trump-economy.html",
+                            title="Harris Now Has an Economic Plan. Can It Best Trump's Promises?",
+                            extract="Sample extract text snipped from article via AI.")
         promise = Promise(text="Lower costs, reduce regulations, cut taxes for the middle class, and incentivize "
                                "corporations to build their products in the United States.",
                           _timestamp=datetime.today(),
                           status=0,
-                          sources=[source])
+                          citations=[citation])
         candidate = Candidate(name="Kamala Harris",
                               description="Candidate for 2024 US presidential election with Tim Walz as running mate.",
-                              promises=[promise],
-                              sources=[source])
+                              promises=[promise])
 
         session.add(candidate)
         session.commit()
 
-        session.refresh(source)
+        session.refresh(citation)
         session.refresh(promise)
         session.refresh(candidate)
 
         logger.info(f"Seeded database with candidate {candidate}.")
         logger.info(f"Seeded database with promise {promise}.")
-        logger.info(f"Seeded database with source {source}.")
+        logger.info(f"Seeded database with citation {citation}.")
     else:
         logger.info("Queried database found to have non-empty candidates table, so skipping seed process.")

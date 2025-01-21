@@ -19,3 +19,4 @@ debugging:
 resolve all the todos in code, too.
 
 browser for simple api testing, though postman for best functionality
+how to dedupe candidates?

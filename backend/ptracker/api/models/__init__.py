@@ -1,8 +1,7 @@
-from .candidate import Candidate, CandidateBase, CandidateCreate, CandidatePublic, CandidatesPublic, CandidateUpdate
-from .promise import Promise, PromiseBase, PromiseCreate
-from .source import Source, SourceBase, SourceCreate
+from .candidate import Candidate, CandidateCreate, CandidatePublic, CandidatesPublic, CandidateUpdate
+from .promise import Promise, PromiseCreate
+from .citation import Citation, CitationCreate
 
 
 # Resolve a few tricky types for Pydantic directly.
-CandidateCreate.model_rebuild()
 PromiseCreate.model_rebuild()
