@@ -22,7 +22,7 @@ class Candidate(CandidateBase, table=True):
 
 class CandidatePublic(CandidateBase):
     id: int
-    promises: list[int] = Field(description="Integer list of promise IDs associated with this candidate.")
+    promises: int = Field(description="Number of promises tracked for this candidate.")
 
 
 class CandidatesPublic(SQLModel):

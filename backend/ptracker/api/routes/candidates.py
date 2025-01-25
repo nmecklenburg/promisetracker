@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlmodel import col, func, select, Session
-from typing import cast, Any
+from typing import Any
 
 from ptracker.api.models import (
     Candidate,
@@ -24,21 +24,20 @@ def read_candidates(session: SessionArg, after: int = 0, limit: int = 100) -> An
     candidates = session.exec(candidate_query).all()
 
     pc_query = (select(Promise.id, Promise.candidate_id)
-                .join(Candidate)
                 .where(col(Promise.candidate_id).in_([c.id for c in candidates])))
     promise_candidate_tuples = session.exec(pc_query).all()
 
     pc_map = {}
     for promise_id, candidate_id in promise_candidate_tuples:
         if candidate_id not in pc_map:
-            pc_map[candidate_id] = []
+            pc_map[candidate_id] = 0
 
-        pc_map[candidate_id].append(promise_id)
+        pc_map[candidate_id] += 1
 
     response_candidates = []
     for candidate in candidates:
         response_candidate = CandidatePublic.model_validate(candidate,
-                                                            update={"promises": pc_map.get(candidate.id, [])})
+                                                            update={"promises": pc_map.get(candidate.id, 0)})
         response_candidates.append(response_candidate)
 
     return CandidatesPublic(data=response_candidates, count=count)
@@ -51,8 +50,8 @@ def read_candidate(session: SessionArg, cid: int) -> Any:
     if not candidate:
         raise HTTPException(status_code=404, detail=f"Candidate with id={cid} not found.")
 
-    promise_ids = _get_promise_ids_helper(session, candidate.id)
-    return CandidatePublic.model_validate(candidate, update={"promises": promise_ids})
+    num_promises = _get_promises_helper(session, candidate.id)
+    return CandidatePublic.model_validate(candidate, update={"promises": num_promises})
 
 
 @router.post("/", response_model=CandidatePublic)
@@ -62,7 +61,7 @@ def create_candidate(session: SessionArg, candidate_in: CandidateCreate) -> Any:
     session.commit()
     session.refresh(candidate)
 
-    return CandidatePublic.model_validate(candidate, update={"promises": []})
+    return CandidatePublic.model_validate(candidate, update={"promises": 0})
 
 
 @router.patch("/{cid}", response_model=CandidatePublic)
@@ -78,14 +77,14 @@ def update_candidate(session: SessionArg, cid: int, candidate_in: CandidateUpdat
     session.commit()
     session.refresh(candidate)
 
-    promise_ids = _get_promise_ids_helper(session, candidate.id)
-    return CandidatePublic.model_validate(candidate, update={"promises": promise_ids})
+    num_promises = _get_promises_helper(session, candidate.id)
+    return CandidatePublic.model_validate(candidate, update={"promises": num_promises})
 
 
-def _get_promise_ids_helper(session: Session, candidate_id: int) -> list[int]:
-    query = select(Promise.id).where(Promise.candidate_id == candidate_id)
-    promise_ids = session.exec(query).all()
-    return cast(list[int], promise_ids)
+def _get_promises_helper(session: Session, candidate_id: int) -> int:
+    query = select(func.count()).select_from(Promise).where(Promise.candidate_id == candidate_id)
+    num_promises = session.exec(query).one()
+    return num_promises
 
 
 @router.post("/{cid}/sources", response_model=CandidatePublic)
