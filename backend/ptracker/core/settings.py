@@ -27,7 +27,8 @@ class Settings(BaseSettings):
     FRONTEND_HOST: str = "http://localhost:5173"
     BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
-    SUPABASE_URL: str
+    SUPABASE_URL_IPV4: str
+    SUPABASE_URL_IPV6: str
     SUPABASE_KEY: str
 
     @computed_field
