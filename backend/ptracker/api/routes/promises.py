@@ -51,7 +51,7 @@ def read_promise(session: SessionArg, candidate_id: int, promise_id: int) -> Any
         raise HTTPException(status_code=404, detail=f"Promise with id={promise_id} not found for candidate "
                                                     f"with id={candidate_id}.")
 
-    num_citations = _get_citations_helper(session, promise.id)
+    num_citations = _get_citation_count_helper(session, promise.id)
     return PromisePublic.model_validate(promise, update={"citations": num_citations})
 
 
@@ -92,11 +92,11 @@ def update_promise(session: SessionArg, candidate_id: int, promise_id: int, prom
     session.commit()
     session.refresh(promise)
 
-    num_citations = _get_citations_helper(session, promise.id)
+    num_citations = _get_citation_count_helper(session, promise.id)
     return PromisePublic.model_validate(promise, update={"citations": num_citations})
 
 
-def _get_citations_helper(session: Session, promise_id: int) -> int:
+def _get_citation_count_helper(session: Session, promise_id: int) -> int:
     query = select(func.count()).select_from(Citation).where(Citation.promise_id == promise_id)
     num_citations = session.exec(query).one()
     return num_citations

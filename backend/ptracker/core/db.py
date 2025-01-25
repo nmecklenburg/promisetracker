@@ -64,7 +64,6 @@ def init_db(session: Session) -> None:
     if not results.all():
         citation = Citation(date=datetime.now(),
                             url="https://www.nytimes.com/2024/09/26/us/politics/harris-trump-economy.html",
-                            title="Harris Now Has an Economic Plan. Can It Best Trump's Promises?",
                             extract="Sample extract text snipped from article via AI.")
         promise = Promise(text="Lower costs, reduce regulations, cut taxes for the middle class, and incentivize "
                                "corporations to build their products in the United States.",
@@ -76,16 +75,16 @@ def init_db(session: Session) -> None:
                               promises=[promise])
 
         second_citation = Citation(date=datetime.now(),
-                                   url="https://www.gooogle.com",
-                                   title="Joe Biden 46th President",
+                                   url="https://www.google.com",
                                    extract="Sample extract text snipped from article via AI.")
         second_promise = Promise(text="Sample promise from article.",
                                  _timestamp=datetime.today(),
                                  status=0,
                                  citations=[second_citation])
-        second_candidate = Candidate(name="Joe Biden",
-                                     description="Candidate for 2020 US presidential election with Kamala Harris as running mate.",
-                                     promises=[second_promise])
+        second_candidate = \
+            Candidate(name="Joe Biden",
+                      description="Candidate for 2020 US presidential election with Kamala Harris as running mate.",
+                      promises=[second_promise])
 
         session.add(candidate)
         session.add(second_candidate)
