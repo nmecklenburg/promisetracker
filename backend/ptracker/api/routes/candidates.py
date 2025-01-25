@@ -8,6 +8,7 @@ from ptracker.api.models import (
     CandidatePublic,
     CandidateUpdate,
     CandidatesPublic,
+    Citation,
     Promise,
     SourceRequest
 )
@@ -94,4 +95,31 @@ def _get_promise_ids_helper(session: Session, candidate_id: int) -> list[int]:
 def add_candidate_sources(session: SessionArg, cid: int, sources: SourceRequest):
     # Main entrypoint to do promise extraction.
     promise_creation_jsons: list[dict] = extract_promises(cast(list[str], sources.urls))
-    return {"Hello": "World!", "sources": sources}
+    new_promises = []
+    for promise_json in promise_creation_jsons:
+        citation_jsons = promise_json["citations"]
+        assert len(citation_jsons) > 0, "Unexpected got no citations for extracted promise. This is a system error."
+        citations = _commitless_citation_helper(session, citation_jsons)  # type: list[Citation]
+        promise = Promise.parse_obj(promise_json, update={"citations": citations})
+        new_promises.append(promise)
+        session.add(promise)
+
+    session.commit()
+
+    for promise in new_promises:
+        session.refresh(promise)
+
+    candidate = session.get(Candidate, cid)
+    candidate.sqlmodel_update({"promises": candidate.promises + new_promises})
+    candidate.promises.extend(promises)
+    session.
+
+
+def _commitless_citation_helper(session: Session, citation_jsons: list[dict]) -> list[Citation]:
+    # TODO: this probably belongs elsewhere
+    citations = []
+    for citation_json in citation_jsons:
+        citation = Citation.parse_obj(citation_json)
+        citations.append(citation)
+        session.add(citation)
+    return citations
