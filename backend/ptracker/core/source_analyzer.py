@@ -1,7 +1,13 @@
 from openai import AzureOpenAI
+from bs4 import BeautifulSoup
 
 
 def extract_promises(urls: list[str]) -> list[dict]:
+    # Hmm, for a future phase -- should we try to bypass paywalls? Probably not
+    pass
+
+
+def stub_extract_promises(urls: list[str]) -> list[dict]:
     return [
         {
             "_timestamp": "2024-01-05",
