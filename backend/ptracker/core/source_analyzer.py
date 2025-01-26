@@ -2,11 +2,18 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from openai import OpenAI
 from pydantic import BaseModel
+from sqlmodel import Session
 from typing import Any, Generator
 
 import requests
 
-from ptracker.api.models import PromiseStatus
+from ptracker.api.models import (
+    Candidate,
+    Citation,
+    Promise,
+)
+from ptracker.core.constants import PromiseStatus
+from ptracker.core.db import engine
 from ptracker.core.settings import settings
 from ptracker.core.utils import get_logger
 
@@ -45,7 +52,36 @@ class LLMPromiseResponse(BaseModel):
     exact_quote: str
 
 
-def extract_promises(name: str, urls: list[str]) -> list[dict]:
+def extract_promises(
+    candidate: Candidate, urls: list[str]
+) -> None:
+    promise_creation_jsons = construct_promise_jsons(name=candidate.name, urls=urls)
+    # Only spin up session connection once I/O calls to OpenAI are complete.
+    with (Session(engine) as session):
+        new_promises = []
+        for promise_json in promise_creation_jsons:
+            citation_jsons = promise_json["citations"]
+            assert len(citation_jsons) > 0, \
+                "Unexpectedly got no citations for extracted promise. This is a system error."
+            citations = _commitless_add_citations(session, citation_jsons)  # type: list[Citation]
+            promise = Promise.model_validate(promise_json, update={"candidate_id": candidate.id})
+            promise.citations = citations
+            new_promises.append(promise)
+            session.add(promise)
+        session.commit()
+    return
+
+
+def _commitless_add_citations(session: Session, citation_jsons: list[dict]) -> list[Citation]:
+    citations = []
+    for citation_json in citation_jsons:
+        citation = Citation(**citation_json)
+        citations.append(citation)
+        session.add(citation)
+    return citations
+
+
+def construct_promise_jsons(name: str, urls: list[str]) -> list[dict]:
     # Hmm, for a future phase -- should we try to bypass paywalls? Probably not
     # For now, assume all content is easily accessible.
     promise_dicts = []

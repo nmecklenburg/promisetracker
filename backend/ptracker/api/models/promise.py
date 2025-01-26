@@ -1,13 +1,5 @@
 from datetime import datetime
-from enum import Enum
 from sqlmodel import Field, Relationship, SQLModel
-
-
-class PromiseStatus(Enum):
-    PROGRESSING = 0
-    COMPLETE = 1
-    BROKEN = 2
-    COMPROMISED = 3
 
 
 class PromiseBase(SQLModel):

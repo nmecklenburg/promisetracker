@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from sqlmodel import col, func, select, Session
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from sqlmodel import Session, col, func, select
 from typing import Any
 
 from ptracker.api.models import (
@@ -8,10 +8,11 @@ from ptracker.api.models import (
     CandidatePublic,
     CandidateUpdate,
     CandidatesPublic,
-    Citation,
     Promise,
-    SourceRequest
+    SourceRequest,
+    SourceResponse,
 )
+from ptracker.core.constants import PromiseExtractionPhase
 from ptracker.core.db import SessionArg
 from ptracker.core.source_analyzer import extract_promises
 from ptracker.core.utils import get_logger
@@ -87,40 +88,25 @@ def update_candidate(session: SessionArg, candidate_id: int, candidate_in: Candi
     return CandidatePublic.model_validate(candidate, update={"promises": num_promises})
 
 
-@router.post("/{candidate_id}/sources", response_model=CandidatePublic)  # TODO nmecklenburg: consider async
-def add_candidate_sources(session: SessionArg, candidate_id: int, sources: SourceRequest):
+@router.post("/{candidate_id}/sources", response_model=SourceResponse)
+def add_candidate_sources(
+        session: SessionArg,
+        candidate_id: int,
+        sources: SourceRequest,
+        background_tasks: BackgroundTasks
+) -> Any:
     # Main entrypoint to do promise extraction.
-    # TODO nmecklenburg: DTO here should be PromiseCreates
     candidate = session.get(Candidate, candidate_id)
     if not candidate:
         raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
 
-    promise_creation_jsons: list[dict] = extract_promises(candidate.name, urls=[str(url) for url in sources.urls])
-    new_promises = []
-    for promise_json in promise_creation_jsons:
-        citation_jsons = promise_json["citations"]
-        assert len(citation_jsons) > 0, "Unexpectedly got no citations for extracted promise. This is a system error."
-        citations = _commitless_add_citations(session, citation_jsons)  # type: list[Citation]
-        promise = Promise.model_validate(promise_json, update={"candidate_id": candidate_id})
-        promise.citations = citations
-        new_promises.append(promise)
-        session.add(promise)
+    stringified_urls = [str(url) for url in sources.urls]
+    background_tasks.add_task(extract_promises, candidate, stringified_urls)
 
-    session.commit()
-
-    return CandidatePublic.model_validate(candidate, update={"promises": len(candidate.promises)})
+    return SourceResponse(status=PromiseExtractionPhase.STARTED)
 
 
 def _get_promises_helper(session: Session, candidate_id: int) -> int:
     query = select(func.count()).select_from(Promise).where(Promise.candidate_id == candidate_id)
     num_promises = session.exec(query).one()
     return num_promises
-
-
-def _commitless_add_citations(session: Session, citation_jsons: list[dict]) -> list[Citation]:
-    citations = []
-    for citation_json in citation_jsons:
-        citation = Citation(**citation_json)
-        citations.append(citation)
-        session.add(citation)
-    return citations
