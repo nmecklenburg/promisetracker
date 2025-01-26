@@ -88,7 +88,7 @@ def construct_promise_jsons(name: str, urls: list[str]) -> list[dict]:
     logger.info(f"Received {len(urls)} urls for candidate {name}. Beginning promise extraction; "
                 f"looping through them now.")
     for url in urls:
-        text = _get_article_text_wiki_test(url)
+        text = _get_article_text(url)
         if not text:
             logger.warning(f"Failed to extract text from {url}.")
             continue
