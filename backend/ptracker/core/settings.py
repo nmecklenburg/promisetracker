@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     SUPABASE_URL_IPV6: str
     SUPABASE_KEY: str
 
+    AOAI_KEY: str
+    AOAI_ENDPOINT: str
+    AOAI_DEPLOYMENT_NAME: str
+    AOAI_API_VERSION: str
+
+    CITATION_EXTRACT_LENGTH: int
+
     @computed_field
     @property
     def all_cors_origins(self) -> list[str]:

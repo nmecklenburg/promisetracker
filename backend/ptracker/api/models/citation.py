@@ -1,17 +1,18 @@
 from datetime import datetime
 from pydantic import HttpUrl
 from sqlmodel import Field, Relationship, SQLModel
+from ptracker.core.settings import settings
 
 
 class CitationBase(SQLModel):
     date: datetime
-    extract: str = Field(max_length=255)
+    extract: str = Field(max_length=settings.CITATION_EXTRACT_LENGTH)
     promise_id: int = Field(foreign_key="promise.id", ondelete="CASCADE")
 
 
 class CitationCreate(SQLModel):
     date: datetime
-    extract: str = Field(max_length=255)
+    extract: str = Field(max_length=settings.CITATION_EXTRACT_LENGTH)
     url: HttpUrl
 
 

@@ -87,7 +87,12 @@ def update_candidate(session: SessionArg, candidate_id: int, candidate_in: Candi
 @router.post("/{candidate_id}/sources", response_model=CandidatePublic)  # TODO nmecklenburg: consider async
 def add_candidate_sources(session: SessionArg, candidate_id: int, sources: SourceRequest):
     # Main entrypoint to do promise extraction.
-    promise_creation_jsons: list[dict] = extract_promises(cast(list[str], sources.urls))
+    # TODO nmecklenburg: DTO here should be PromiseCreates
+    candidate = session.get(Candidate, candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
+
+    promise_creation_jsons: list[dict] = extract_promises(candidate.name, urls=[str(url) for url in sources.urls])
     new_promises = []
     for promise_json in promise_creation_jsons:
         citation_jsons = promise_json["citations"]
@@ -100,7 +105,6 @@ def add_candidate_sources(session: SessionArg, candidate_id: int, sources: Sourc
 
     session.commit()
 
-    candidate = session.get(Candidate, candidate_id)
     return CandidatePublic.model_validate(candidate, update={"promises": len(candidate.promises)})
 
 
