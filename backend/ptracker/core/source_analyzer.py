@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
-from openai import AzureOpenAI
+from openai import OpenAI
 from pydantic import BaseModel
 from typing import Any, Generator
 
@@ -13,11 +13,7 @@ from ptracker.core.utils import get_logger
 logger = get_logger(__name__)
 
 
-client = AzureOpenAI(
-    azure_endpoint=settings.AOAI_ENDPOINT,
-    api_key=settings.AOAI_KEY,
-    api_version=settings.AOAI_API_VERSION,
-)
+client = OpenAI(api_key=settings.OPENAI_KEY)
 
 
 PROMISE_SYSTEM_PROMPT = """You are an expert in analyzing political speech by or about the politician {{name}}. Your task is to extract structured information about politicians, their promises, and the exact quotes containing only the promise fragment that meets the following strict criteria:
@@ -122,7 +118,7 @@ def _get_promises_from_extract(extract: str, candidate_name: str, url: str) -> d
     ]
 
     response = client.beta.chat.completions.parse(
-        model=settings.AOAI_DEPLOYMENT_NAME,
+        model=settings.OPENAI_MODEL_NAME,
         messages=messages,
         max_tokens=800,
         temperature=0.7,
@@ -159,42 +155,3 @@ def _get_promises_from_extract(extract: str, candidate_name: str, url: str) -> d
             }
         ]
     }
-
-
-def stub_extract_promises(urls: list[str]) -> list[dict]:
-    return [
-        {
-            "_timestamp": "2024-01-05",
-            "status": 0,
-            "text": "some sample text",
-            "citations": [
-                {
-                    "date": "2024-08-01",
-                    "extract": "this is a sample extract",
-                    "url": "https://www.google.com"
-                },
-                {
-                    "date": "2008-05-13",
-                    "extract": "this is a second sample extract",
-                    "url": "https://www.bing.com"
-                }
-            ],
-        },
-        {
-            "_timestamp": "2024-01-07",
-            "status": 2,
-            "text": "some more sample text",
-            "citations": [
-                {
-                    "date": "2024-07-12",
-                    "extract": "this is a third sample extract",
-                    "url": "https://www.stanford.edu"
-                },
-                {
-                    "date": "2011-12-21",
-                    "extract": "this is a fourth sample extract",
-                    "url": "https://www.berkeley.edu"
-                }
-            ],
-        },
-    ]
