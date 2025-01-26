@@ -4,13 +4,13 @@ from openai import AzureOpenAI
 from pydantic import BaseModel
 from typing import Any, Generator
 
-import logging
 import requests
 
 from ptracker.api.models import PromiseStatus
 from ptracker.core.settings import settings
+from ptracker.core.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 client = AzureOpenAI(

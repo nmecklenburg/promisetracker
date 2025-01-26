@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlmodel import col, func, select, Session
-from typing import cast, Any
+from typing import Any
 
 from ptracker.api.models import (
     Candidate,
@@ -14,8 +14,11 @@ from ptracker.api.models import (
 )
 from ptracker.core.db import SessionArg
 from ptracker.core.source_analyzer import extract_promises
+from ptracker.core.utils import get_logger
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
+
+logger = get_logger(__name__)
 
 
 @router.get("/", response_model=CandidatesPublic)
