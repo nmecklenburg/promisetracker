@@ -1,7 +1,4 @@
-from colorama import just_fix_windows_console
 from sqlmodel import Session
-
-import logging
 
 from ptracker.core.db import engine, init_db
 from ptracker.core.utils import get_logger

@@ -1,6 +1,8 @@
 from datetime import datetime
 from pydantic import HttpUrl
 from sqlmodel import Field, Relationship, SQLModel
+from typing import Optional
+
 from ptracker.core.settings import settings
 
 
@@ -32,5 +34,7 @@ class CitationsPublic(SQLModel):
     count: int = Field(description="Total number of citations associated with this promise.")
 
 
-class CitationUpdate(CitationCreate):
-    pass
+class CitationUpdate(SQLModel):
+    date: Optional[datetime] = None
+    extract: Optional[str] = None
+    url: Optional[HttpUrl] = None
