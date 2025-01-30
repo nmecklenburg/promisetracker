@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlmodel import Field, Relationship, SQLModel
+from typing import Optional
 
 
 class PromiseBase(SQLModel):
@@ -13,8 +14,10 @@ class PromiseCreate(PromiseBase):
     citations: list["CitationCreate"] = Field(min_items=1)  # noqa: F821
 
 
-class PromiseUpdate(PromiseBase):
-    pass
+class PromiseUpdate(SQLModel):
+    _timestamp: Optional[datetime] = None
+    status: Optional[int] = None
+    text: Optional[str] = None
 
 
 class Promise(PromiseBase, table=True):

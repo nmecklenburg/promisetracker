@@ -1,11 +1,9 @@
 from sqlmodel import Session
 
-import logging
-
 from ptracker.core.db import engine, init_db
+from ptracker.core.utils import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def main() -> None:

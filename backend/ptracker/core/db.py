@@ -11,16 +11,15 @@ from sqlmodel import (
 )
 from typing import Annotated, Generator
 
-import logging
-
 from ptracker.api.models import (
     Candidate,
     Promise,
     Citation,
 )
 from ptracker.core.settings import settings
+from ptracker.core.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _init_engine() -> Engine:

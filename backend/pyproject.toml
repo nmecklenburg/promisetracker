@@ -3,7 +3,14 @@ name = "ptracker"
 version = "0.1"
 description = ""
 requires-python = ">=3.10,<4.0"
-dependencies = ["psycopg2"]
+dependencies = [
+    "psycopg2",
+    "fastapi[standard]",
+    "uvicorn",
+    "supabase",
+    "openai",
+    "beautifulsoup4"
+]
 
 [build-system]
 requires = ["setuptools>=75"]

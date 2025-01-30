@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from sqlmodel import col, func, select, Session
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from sqlmodel import Session, col, func, select
 from typing import Any
 
 from ptracker.api.models import (
@@ -9,10 +9,17 @@ from ptracker.api.models import (
     CandidateUpdate,
     CandidatesPublic,
     Promise,
+    SourceRequest,
+    SourceResponse,
 )
+from ptracker.core.constants import PromiseExtractionPhase
 from ptracker.core.db import SessionArg
+from ptracker.core.source_analyzer import extract_promises
+from ptracker.core.utils import get_logger
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
+
+logger = get_logger(__name__)
 
 
 @router.get("/", response_model=CandidatesPublic)
@@ -43,12 +50,12 @@ def read_candidates(session: SessionArg, after: int = 0, limit: int = 100) -> An
     return CandidatesPublic(data=response_candidates, count=count)
 
 
-@router.get("/{cid}", response_model=CandidatePublic)
-def read_candidate(session: SessionArg, cid: int) -> Any:
-    candidate = session.get(Candidate, cid)
+@router.get("/{candidate_id}", response_model=CandidatePublic)
+def read_candidate(session: SessionArg, candidate_id: int) -> Any:
+    candidate = session.get(Candidate, candidate_id)
 
     if not candidate:
-        raise HTTPException(status_code=404, detail=f"Candidate with id={cid} not found.")
+        raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
 
     num_promises = _get_promises_helper(session, candidate.id)
     return CandidatePublic.model_validate(candidate, update={"promises": num_promises})
@@ -64,12 +71,12 @@ def create_candidate(session: SessionArg, candidate_in: CandidateCreate) -> Any:
     return CandidatePublic.model_validate(candidate, update={"promises": 0})
 
 
-@router.patch("/{cid}", response_model=CandidatePublic)
-def update_candidate(session: SessionArg, cid: int, candidate_in: CandidateUpdate) -> Any:
-    candidate = session.get(Candidate, cid)
+@router.patch("/{candidate_id}", response_model=CandidatePublic)
+def update_candidate(session: SessionArg, candidate_id: int, candidate_in: CandidateUpdate) -> Any:
+    candidate = session.get(Candidate, candidate_id)
 
     if not candidate:
-        raise HTTPException(status_code=404, detail=f"Candidate with id={cid} not found.")
+        raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
 
     update_dict = candidate_in.model_dump(exclude_unset=True)
     candidate.sqlmodel_update(update_dict)
@@ -81,13 +88,25 @@ def update_candidate(session: SessionArg, cid: int, candidate_in: CandidateUpdat
     return CandidatePublic.model_validate(candidate, update={"promises": num_promises})
 
 
+@router.post("/{candidate_id}/sources", response_model=SourceResponse)
+def add_candidate_sources(
+        session: SessionArg,
+        candidate_id: int,
+        sources: SourceRequest,
+        background_tasks: BackgroundTasks
+) -> Any:
+    # Main entrypoint to do promise extraction.
+    candidate = session.get(Candidate, candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
+
+    stringified_urls = [str(url) for url in sources.urls]
+    background_tasks.add_task(extract_promises, candidate, stringified_urls)
+
+    return SourceResponse(status=PromiseExtractionPhase.STARTED)
+
+
 def _get_promises_helper(session: Session, candidate_id: int) -> int:
     query = select(func.count()).select_from(Promise).where(Promise.candidate_id == candidate_id)
     num_promises = session.exec(query).one()
     return num_promises
-
-
-@router.post("/{cid}/sources", response_model=CandidatePublic)
-def add_candidate_sources(session: SessionArg, cid: int, sources: list[str]):
-    # Main entrypoint to do promise extraction.
-    pass
