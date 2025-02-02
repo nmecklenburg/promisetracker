@@ -4,12 +4,17 @@ version = "0.1"
 description = ""
 requires-python = ">=3.10,<4.0"
 dependencies = [
-    "psycopg2",
-    "fastapi[standard]",
-    "uvicorn",
-    "supabase",
-    "openai",
-    "beautifulsoup4"
+    "beautifulsoup4==4.12.3",
+    "fastapi[standard]==0.115.6",
+    "openai==1.60.1",
+    "psycopg2==2.9.10",
+    "pydantic-settings==2.7.1",
+    "pydantic==2.10.5",
+    "requests==2.32.3",
+    "sqlmodel==0.0.22",
+    "supabase==2.11.0",
+    "termcolor==2.5.0",
+    "uvicorn==0.34.0",
 ]
 
 [build-system]
