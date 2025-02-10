@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from openai import OpenAI
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import select, Session
 from typing import Any, Generator
 
 import requests
@@ -13,8 +13,9 @@ from ptracker.api.models import (
     Promise,
 )
 from ptracker.core import prompts
-from ptracker.core.constants import PromiseStatus
+from ptracker.core import constants
 from ptracker.core.db import engine
+from ptracker.core.llm_utils import get_promise_embedding, cosine_similarity
 from ptracker.core.settings import settings
 from ptracker.core.utils import get_logger
 
@@ -34,10 +35,13 @@ def extract_promises(
     candidate: Candidate, urls: list[str]
 ) -> None:
     promise_creation_jsons = construct_promise_jsons(name=candidate.name, urls=urls)
+    logger.info(f"Number of promises before deduplication: {len(promise_creation_jsons)}.")
+    filtered_promise_jsons = deduplicate_promises(promise_creation_jsons)
+    logger.info(f"Number of promises after deduplication: {len(filtered_promise_jsons)}.")
     # Only spin up session connection once I/O calls to OpenAI are complete.
     with (Session(engine) as session):
         new_promises = []
-        for promise_json in promise_creation_jsons:
+        for promise_json in filtered_promise_jsons:
             citation_jsons = promise_json["citations"]
             assert len(citation_jsons) > 0, \
                 "Unexpectedly got no citations for extracted promise. This is a system error."
@@ -78,6 +82,31 @@ def construct_promise_jsons(name: str, urls: list[str]) -> list[dict]:
             else:
                 promise_dicts.append(promise_dict)
     return promise_dicts
+
+
+def deduplicate_promises(promise_dicts: list[dict]) -> list[dict]:
+    filtered_promise_dicts = []
+
+    promise_idxs = set(range(len(promise_dicts)))
+    while promise_idxs:
+        this_idx = promise_idxs.pop()
+        dup_idxs = [other_idx for other_idx in promise_idxs if cosine_similarity(
+            promise_dicts[this_idx]['embedding'], promise_dicts[other_idx]['embedding']) >= 0.7]
+        # Break ties in favor of longer promise text, for now.
+        longest_promise = promise_dicts[this_idx]
+        for idx in dup_idxs:
+            promise_idxs.remove(idx)
+            dup_promise = promise_dicts[idx]
+            if len(dup_promise['text']) > len(longest_promise['text']):
+                longest_promise = dup_promise
+
+        with Session(engine) as session:
+            duplicate = session.exec(select(Promise).filter(
+                Promise.embedding.cosine_distance(longest_promise['embedding']) < 0.3).limit(1)).first()
+            # Regardless of length, existing promises take precedence.
+            if duplicate is None:
+                filtered_promise_dicts.append(longest_promise)
+    return filtered_promise_dicts
 
 
 def _get_article_text(url: str) -> str | None:
@@ -160,8 +189,9 @@ def _get_promises_from_extract(extract: str, candidate_name: str, url: str) -> d
     logger.info(f"Article extract: {raw_promise.exact_quote}")
     return {
         "_timestamp": datetime.now(),
-        "status": PromiseStatus.PROGRESSING,
+        "status": constants.PromiseStatus.PROGRESSING,
         "text": raw_promise.promise_text,
+        "embedding": get_promise_embedding(raw_promise.promise_text),
         "citations": [
             {
                 "date": datetime.now(),

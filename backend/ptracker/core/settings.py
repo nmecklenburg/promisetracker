@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     OPENAI_MODEL_NAME: str
 
     CITATION_EXTRACT_LENGTH: int
+    PROMISE_EMBEDDING_DIM: int
 
     @computed_field
     @property

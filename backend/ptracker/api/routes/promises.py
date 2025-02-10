@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from sqlmodel import col, func, select, Session
+from sqlmodel import and_, col, func, select, Session
 from typing import Any
 
 from ptracker.api.models import (
@@ -11,6 +11,7 @@ from ptracker.api.models import (
     PromiseUpdate,
 )
 from ptracker.core.db import SessionArg
+from ptracker.core.llm_utils import get_promise_embedding
 
 router = APIRouter(prefix="/candidates/{candidate_id}/promises", tags=["promises"])
 
@@ -57,6 +58,12 @@ def read_promise(session: SessionArg, candidate_id: int, promise_id: int) -> Any
 
 @router.post("/", response_model=PromisePublic)
 def create_promise(session: SessionArg, candidate_id: int, promise_in: PromiseCreate) -> Any:
+    embedding = get_promise_embedding(promise_in.text)
+    duplicates = session.exec(select(Promise).filter(Promise.embedding.cosine_distance(embedding) < 0.3)).all()
+    if duplicates:
+        raise HTTPException(status_code=400, detail=f"Promise with text {promise_in.text} may be a duplicate of "
+                                                    f"promises {[d.id for d in duplicates]}.")
+
     # We disallow the creation of promises without citations, meaning we must create citations
     # as part of this promise creation flow.
     citations = []
@@ -70,7 +77,8 @@ def create_promise(session: SessionArg, candidate_id: int, promise_in: PromiseCr
         citations.append(citation)
 
     promise = Promise.model_validate(promise_in, update={"citations": citations,
-                                                         "candidate_id": candidate_id})
+                                                         "candidate_id": candidate_id,
+                                                         "embedding": embedding})
     session.add(promise)
     session.commit()
     session.refresh(promise)
@@ -80,6 +88,12 @@ def create_promise(session: SessionArg, candidate_id: int, promise_in: PromiseCr
 
 @router.patch("/{promise_id}", response_model=PromisePublic)
 def update_promise(session: SessionArg, candidate_id: int, promise_id: int, promise_in: PromiseUpdate) -> Any:
+    embedding = get_promise_embedding(promise_in.text)
+    duplicates = session.exec(select(Promise).filter(and_(Promise.id != promise_id,
+                                                          Promise.embedding.cosine_distance(embedding) < 0.3))).all()
+    if duplicates:
+        raise HTTPException(status_code=400, detail=f"Promise with text {promise_in.text} may be a duplicate of "
+                                                    f"promises {[d.id for d in duplicates]}.")
     promise = session.get(Promise, promise_id)
 
     if not promise or promise.candidate_id != candidate_id:
@@ -87,6 +101,9 @@ def update_promise(session: SessionArg, candidate_id: int, promise_id: int, prom
                                                     f"with id={candidate_id}.")
 
     update_dict = promise_in.model_dump(exclude_unset=True)
+    if promise_in.text and promise_in.text != promise.text:
+        # Update embedding
+        update_dict['embedding'] = get_promise_embedding(promise_in.text)
     promise.sqlmodel_update(update_dict)
     session.add(promise)
     session.commit()
