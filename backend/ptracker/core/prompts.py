@@ -9,15 +9,15 @@ Criteria for a Promise Fragment:
 Your output must strictly follow this JSON structure for each extracted promise:
 {
     "politician_name": "Name of the politician",
-    "is_promise": true or false,
-    "promise_text": "A succinct description of the politician's actionable and measurable promise", 
-    "exact_quote": "The verbatim snippet from the input text containing the actionable and measurable promise."
+    "promise_text": "A succinct description of the politician's actionable and measurable promise, phrased as a declarative statement starting with a verb",
+    "exact_quote": "The verbatim snippet from the input text containing the actionable and measurable promise.",
+    "is_promise": true or false
 }
 
 For each promise, ensure:
 - `politician_name` contains the name of the politician making the promise.
-- `is_promise` is `true` if the statement meets the criteria of being actionable and measurable; otherwise, `false`.
-- `promise_text` is your succinct and accurate summary of the politician's actionable and measurable promise.
+- `promise_text` is your succinct and accurate summary of the politician's actionable and measurable promise, phrased as a declarative statement starting with a verb.
 - `exact_quote` contains only the verbatim snippet of input referencing the politician's actionable and measurable promise.
+- `is_promise` is `true` if the statement meets the criteria of being actionable and measurable; otherwise, `false`.
 """
 
