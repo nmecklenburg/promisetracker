@@ -1,6 +1,9 @@
 from datetime import datetime
-from sqlmodel import Field, Relationship, SQLModel
-from typing import Optional
+from pgvector.sqlalchemy import Vector
+from sqlmodel import Column, Field, Relationship, SQLModel
+from typing import Any, Optional
+
+from ptracker.core.settings import settings
 
 
 class PromiseBase(SQLModel):
@@ -25,6 +28,7 @@ class Promise(PromiseBase, table=True):
     id: int = Field(default=None, primary_key=True)
     candidate: "Candidate" = Relationship(back_populates="promises")  # noqa: F821
     citations: list["Citation"] = Relationship(back_populates="promise", cascade_delete=True)  # noqa: F821
+    embedding: Any = Field(default=None, sa_column=Column(Vector(settings.PROMISE_EMBEDDING_DIM)))
 
     def timestamp(self) -> str:
         return self._timestamp.strftime("%Y-%m-%d")
