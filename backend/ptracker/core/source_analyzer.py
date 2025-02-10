@@ -161,10 +161,11 @@ def _get_promises_from_extract(extract: str, candidate_name: str, url: str) -> d
         {"role": "user", "content": extract}
     ]
 
+    # TODO nmecklenburg: account for length limit errors
     response = client.beta.chat.completions.parse(
         model=settings.OPENAI_MODEL_NAME,
         messages=messages,
-        max_tokens=800,
+        max_tokens=1200,
         temperature=0.7,
         top_p=0.95,
         frequency_penalty=0,

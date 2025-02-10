@@ -58,11 +58,17 @@ def init_db(session: Session) -> None:
     session.exec(text('CREATE EXTENSION IF NOT EXISTS vector'))
     # Create candidates, promises, citations, and links tables.
     SQLModel.metadata.create_all(engine)
-    Index('prom_embeds',
-          Promise.embedding,
-          postgresql_using='hnsw',
-          postgresql_with={'m': 16, 'ef_construction': 64},
-          postgresql_ops={'embedding': 'vector_cosine_ops'}).create(engine)
+
+    index_name = "prom_embeds"
+    query = text(f"SELECT indexname FROM pg_indexes WHERE indexname = '{index_name}' LIMIT 1")
+    if session.exec(query).first() is None:
+        Index(index_name,
+              Promise.embedding,
+              postgresql_using='hnsw',
+              postgresql_with={'m': 16, 'ef_construction': 64},
+              postgresql_ops={'embedding': 'vector_cosine_ops'}).create(engine)
+    else:
+        logger.info(f"Index {index_name} already exists, so will not recreate it.")
 
     query = select(Candidate)
     results = session.exec(query)
