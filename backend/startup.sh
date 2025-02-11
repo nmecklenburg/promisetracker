@@ -1,5 +1,5 @@
 #!/usr/bin/bash
 
-python ptracker/seed.py
+python3 ptracker/seed.py
 
-python ptracker/main.py
+python3 ptracker/main.py
