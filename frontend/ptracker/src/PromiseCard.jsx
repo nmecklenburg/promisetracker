@@ -9,6 +9,12 @@ const PromiseCard = () => {
   const [promises, setPromises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [promiseCounts, setPromiseCounts] = useState({
+    progressing: 0,
+    completed: 0,
+    broken: 0,
+    compromised: 0,
+  });
 
   useEffect(() => {
     const fetchCandidateData = async () => {
@@ -19,17 +25,46 @@ const PromiseCard = () => {
         );
         setCandidate(candidateResponse.data);
 
-        // Fetch promises for the candidate
+        // Fetch all promises for the candidate
         const promisesResponse = await axios.get(
           `http://localhost:8000/api/v1/candidates/${candidateId}/promises`,
           {
             params: {
               after: 0,
-              limit: 4
+              limit: 1000, // Fetch all promises
             },
           }
         );
-        setPromises(promisesResponse.data.data);
+        const fetchedPromises = promisesResponse.data.data;
+
+        // Count promises by status
+        const counts = {
+          progressing: 0,
+          completed: 0,
+          broken: 0,
+          compromised: 0,
+        };
+        fetchedPromises.forEach((promise) => {
+          switch (promise.status) {
+            case 0:
+              counts.progressing++;
+              break;
+            case 1:
+              counts.completed++;
+              break;
+            case 2:
+              counts.broken++;
+              break;
+            case 3:
+              counts.compromised++;
+              break;
+            default:
+              break;
+          }
+        });
+
+        setPromises(fetchedPromises);
+        setPromiseCounts(counts);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -41,29 +76,64 @@ const PromiseCard = () => {
     fetchCandidateData();
   }, [candidateId]); // Fetch data whenever candidateId changes
 
-  // Determine status text and colors
-  const getStatusDetails = (status) => {
-    switch (status) {
-      case 0:
-        return { text: 'Progressing', color: 'blue' };
-      case 1:
-        return { text: 'Complete', color: 'green' };
-      case 2:
-        return { text: 'Broken', color: 'red' };
-      case 3:
-        return { text: 'Compromised', color: 'yellow' };
-      default:
-        return { text: 'Unknown', color: 'gray' };
-    }
-  };
+  // Calculate progress percentage
+  const totalPromises =
+    promiseCounts.progressing +
+    promiseCounts.completed +
+    promiseCounts.broken +
+    promiseCounts.compromised;
+  const progressPercentage = totalPromises
+    ? Math.round((promiseCounts.completed / totalPromises) * 100)
+    : 0;
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <div className="promise-card">
-      <h1>Top Promises for {candidate?.name}</h1>
-      {promises.map((promise) => {
+      <h1>{candidate?.name}</h1>
+
+      {/* Progress Bar */}
+      <div className="progress-bar-container">
+        <div className="progress-bar" style={{ width: `${progressPercentage}%` }}>
+          {progressPercentage}%
+        </div>
+      </div>
+      <p className="progress-text">
+        {promiseCounts.completed} / {totalPromises} promises completed
+      </p>
+
+      {/* Visualization */}
+      <div className="promise-visualization">
+        <div className="visualization-card" style={{ backgroundColor: '#a2f3b6' }}>
+          <h2>{promiseCounts.completed}</h2>
+          <p>
+            promises <strong>completed</strong>
+          </p>
+        </div>
+        <div className="visualization-card" style={{ backgroundColor: '#add8e6' }}>
+          <h2>{promiseCounts.progressing}</h2>
+          <p>
+            promises <strong>progressing</strong>
+          </p>
+        </div>
+        <div className="visualization-card" style={{ backgroundColor: '#fff6a5' }}>
+          <h2>{promiseCounts.compromised}</h2>
+          <p>
+            promises <strong>compromised</strong>
+          </p>
+        </div>
+        <div className="visualization-card" style={{ backgroundColor: '#f8b6b6' }}>
+          <h2>{promiseCounts.broken}</h2>
+          <p>
+            promises <strong>broken</strong>
+          </p>
+        </div>
+      </div>
+      
+      <h1>Top Promises to Watch</h1>
+      {/* List of Promises - Display only the first 4 */}
+      {promises.slice(0, 4).map((promise) => {
         const { text: statusText, color: statusColor } = getStatusDetails(promise.status);
 
         return (
@@ -100,6 +170,21 @@ const PromiseCard = () => {
       })}
     </div>
   );
+
+  function getStatusDetails(status) {
+    switch (status) {
+      case 0:
+        return { text: 'Progressing', color: 'blue' };
+      case 1:
+        return { text: 'Complete', color: 'green' };
+      case 2:
+        return { text: 'Broken', color: 'red' };
+      case 3:
+        return { text: 'Compromised', color: 'yellow' };
+      default:
+        return { text: 'Unknown', color: 'gray' };
+    }
+  }
 };
 
 export default PromiseCard;

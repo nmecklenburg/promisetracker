@@ -1,3 +1,63 @@
+/* Progress Bar */
+.progress-bar-container {
+    width: 80%;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px auto;
+    position: relative;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background-color: #f44336; /* Color of the progress bar */
+    text-align: center;
+    line-height: 20px;
+    color: white;
+    font-size: 12px;
+    border-radius: 10px 0 0 10px; /* Round only the left edge */
+    transition: width 0.5s ease-in-out;
+  }
+  
+  .progress-text {
+    text-align: center;
+    font-size: 16px;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+.promise-visualization {
+  display: flex;
+  justify-content: space-evenly;
+  margin: 20px 0;
+}
+
+.visualization-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 150px;
+  height: 150px;
+  border-radius: 10px;
+  color: black;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.visualization-card h2 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.visualization-card p {
+  margin: 5px 0 0;
+  font-size: 1rem;
+}
+
 .promise-card {
     text-align: center;
     font-family: Arial, sans-serif;
