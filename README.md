@@ -11,7 +11,7 @@ Active your virtual environment such that we may install dependencies inside it.
 
 Navigate to the `<project root>/backend/` directory and run `pip install -e .` to editably install the package which you can import under the `ptracker` namespace.
 
-Next you will need to configure your environment variables. Copy the `sample.env` file to `.env` in the same top-level project directory. Changes to the top-level `.env` will not be tracked via git (per `.gitignore` settings); this is by design to ensure we avoid commiting api and database keys. Update the `.env` file to have all the right secrets to ensure functionality.
+Next you will need to configure your environment variables. Copy the `sample.env` file to `.env` in the same top-level project directory. Changes to the top-level `.env` will not be tracked via git (per `.gitignore` settings); this is by design to ensure we avoid commiting api and database keys. Update the `.env` file to have all the right secrets to ensure functionality. The OpenAI API key can be found in the promisetracker openai org and the supabase key is in the schemas & flows document on google drive.
 
 Load the environment variables, such as by running:
 `set -o allexport && source .env && set +o allexport` from the project root directory.

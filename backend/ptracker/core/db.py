@@ -3,11 +3,12 @@ from fastapi import Depends
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlmodel import (
-    Session,
-    SQLModel,
     create_engine,
     select,
-    text
+    text,
+    Index,
+    Session,
+    SQLModel,
 )
 from typing import Annotated, Generator
 
@@ -16,6 +17,7 @@ from ptracker.api.models import (
     Promise,
     Citation,
 )
+from ptracker.core.llm_utils import get_promise_embedding
 from ptracker.core.settings import settings
 from ptracker.core.utils import get_logger
 
@@ -53,8 +55,20 @@ SessionArg = Annotated[Session, Depends(get_db)]
 
 
 def init_db(session: Session) -> None:
+    session.exec(text('CREATE EXTENSION IF NOT EXISTS vector'))
     # Create candidates, promises, citations, and links tables.
     SQLModel.metadata.create_all(engine)
+
+    index_name = "prom_embeds"
+    query = text(f"SELECT indexname FROM pg_indexes WHERE indexname = '{index_name}' LIMIT 1")
+    if session.exec(query).first() is None:
+        Index(index_name,
+              Promise.embedding,
+              postgresql_using='hnsw',
+              postgresql_with={'m': 16, 'ef_construction': 64},
+              postgresql_ops={'embedding': 'vector_cosine_ops'}).create(engine)
+    else:
+        logger.info(f"Index {index_name} already exists, so will not recreate it.")
 
     query = select(Candidate)
     results = session.exec(query)
@@ -64,11 +78,13 @@ def init_db(session: Session) -> None:
         citation = Citation(date=datetime.now(),
                             url="https://www.nytimes.com/2024/09/26/us/politics/harris-trump-economy.html",
                             extract="Sample extract text snipped from article via AI.")
-        promise = Promise(text="Lower costs, reduce regulations, cut taxes for the middle class, and incentivize "
-                               "corporations to build their products in the United States.",
+        ptext = "Lower costs, reduce regulations, cut taxes for the middle class, and incentivize corporations to " \
+                "build their products in the United States."
+        promise = Promise(text=ptext,
                           _timestamp=datetime.today(),
                           status=0,
-                          citations=[citation])
+                          citations=[citation],
+                          embedding=get_promise_embedding(ptext))
         candidate = Candidate(name="Kamala Harris",
                               description="Candidate for 2024 US presidential election with Tim Walz as running mate.",
                               promises=[promise])
@@ -76,10 +92,12 @@ def init_db(session: Session) -> None:
         second_citation = Citation(date=datetime.now(),
                                    url="https://www.google.com",
                                    extract="Sample extract text snipped from article via AI.")
-        second_promise = Promise(text="Sample promise from article.",
+        ptext2 = "Sample promise from article."
+        second_promise = Promise(text=ptext2,
                                  _timestamp=datetime.today(),
                                  status=0,
-                                 citations=[second_citation])
+                                 citations=[second_citation],
+                                 embedding=get_promise_embedding(ptext2))
         second_candidate = \
             Candidate(name="Joe Biden",
                       description="Candidate for 2020 US presidential election with Kamala Harris as running mate.",

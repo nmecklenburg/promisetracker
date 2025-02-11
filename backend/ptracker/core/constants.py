@@ -11,3 +11,6 @@ class PromiseStatus(Enum):
 class PromiseExtractionPhase:
     STARTED = "started"
     FAILED = "failed"
+
+
+DUPLICATE_PROMISE_THRESHOLD = 0.7
