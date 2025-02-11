@@ -1,35 +1,45 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './PromiseCard.css';
 
 const PromiseCard = () => {
+  const { candidateId } = useParams(); // Get candidateId from the URL
+  const [candidate, setCandidate] = useState(null); // Store candidate details
   const [promises, setPromises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchPromises = async () => {
+    const fetchCandidateData = async () => {
       try {
-        const response = await axios.get(
-          'http://localhost:8000/api/v1/candidates/3/promises',
+        // Fetch candidate details
+        const candidateResponse = await axios.get(
+          `http://localhost:8000/api/v1/candidates/${candidateId}`
+        );
+        setCandidate(candidateResponse.data);
+
+        // Fetch promises for the candidate
+        const promisesResponse = await axios.get(
+          `http://localhost:8000/api/v1/candidates/${candidateId}/promises`,
           {
             params: {
-              after: 1,
-              limit: 2, // Adjust based on your needs
+              after: 0,
+              limit: 4
             },
           }
         );
-        setPromises(response.data.data);
+        setPromises(promisesResponse.data.data);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching promises:', err);
-        setError('Failed to fetch promises');
+        console.error('Error fetching data:', err);
+        setError('Failed to fetch data');
         setLoading(false);
       }
     };
 
-    fetchPromises();
-  }, []);
+    fetchCandidateData();
+  }, [candidateId]); // Fetch data whenever candidateId changes
 
   // Determine status text and colors
   const getStatusDetails = (status) => {
@@ -52,7 +62,7 @@ const PromiseCard = () => {
 
   return (
     <div className="promise-card">
-      <h1>Top Promises</h1>
+      <h1>Top Promises for {candidate?.name}</h1>
       {promises.map((promise) => {
         const { text: statusText, color: statusColor } = getStatusDetails(promise.status);
 

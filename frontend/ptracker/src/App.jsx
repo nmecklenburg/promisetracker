@@ -2,13 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import PromiseCard from './PromiseCard';
+import PoliticiansPage from './PoliticiansPage';
 
 const Home = () => {
   return (
     <div>
       <h1>Home Page</h1>
-      <Link to="/promise-card">
-        <button>View Promise Card</button>
+      <Link to="/politicians">
+        <button>Go to Politicians Page</button>
       </Link>
     </div>
   );
@@ -19,7 +20,8 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/promise-card" element={<PromiseCard />} />
+        <Route path="/politicians" element={<PoliticiansPage />} />
+        <Route path="/promise-card/:candidateId" element={<PromiseCard />} />
       </Routes>
     </Router>
   );
