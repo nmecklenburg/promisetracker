@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from openai import OpenAI
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import select, Session
 from typing import Any, Generator
 
 import requests
@@ -12,37 +12,16 @@ from ptracker.api.models import (
     Citation,
     Promise,
 )
-from ptracker.core.constants import PromiseStatus
+from ptracker.core import prompts
+from ptracker.core import constants
 from ptracker.core.db import engine
+from ptracker.core.llm_utils import get_promise_embedding, cosine_similarity
 from ptracker.core.settings import settings
 from ptracker.core.utils import get_logger
 
 logger = get_logger(__name__)
 
-
 client = OpenAI(api_key=settings.OPENAI_KEY)
-
-
-PROMISE_SYSTEM_PROMPT = """You are an expert in analyzing political speech by or about the politician {{name}}. Your task is to extract structured information about politicians, their promises, and the exact quotes containing only the promise fragment that meets the following strict criteria:
-Criteria for a Promise Fragment:
-- Actionable: The statement must clearly describe an action or initiative the politician commits to taking (e.g., 'I will build 500 affordable housing units').
-- Measurable: The promise must include specific and quantifiable outcomes or timelines (e.g., 'within the next year').
-- Exclusion of implied or vague statements: Do not include aspirational, motivational, or rhetorical statements. If the statement lacks specificity or does not commit to a direct action, exclude it.
-- Focus on direct fragments: If the statement contains multiple sentences, extract only the fragment directly fulfilling the actionable and measurable criteria. Exclude all additional context, introductory phrases, or rhetorical elements.
-Your output must strictly follow this JSON structure for each extracted promise:
-{
-    "politician_name": "Name of the politician",
-    "is_promise": true or false,
-    "promise_text": "A succinct description of the politician's actionable and measurable promise", 
-    "exact_quote": "The verbatim snippet from the input text containing the actionable and measurable promise."
-}
-
-For each promise, ensure:
-- `politician_name` contains the name of the politician making the promise.
-- `is_promise` is `true` if the statement meets the criteria of being actionable and measurable; otherwise, `false`.
-- `promise_text` is your succinct and accurate summary of the politician's actionable and measurable promise.
-- `exact_quote` contains only the verbatim snippet of input referencing the politician's actionable and measurable promise.
-"""
 
 
 class LLMPromiseResponse(BaseModel):
@@ -56,10 +35,13 @@ def extract_promises(
     candidate: Candidate, urls: list[str]
 ) -> None:
     promise_creation_jsons = construct_promise_jsons(name=candidate.name, urls=urls)
+    logger.info(f"Number of promises before deduplication: {len(promise_creation_jsons)}.")
+    filtered_promise_jsons = deduplicate_promises(promise_creation_jsons)
+    logger.info(f"Number of promises after deduplication: {len(filtered_promise_jsons)}.")
     # Only spin up session connection once I/O calls to OpenAI are complete.
     with (Session(engine) as session):
         new_promises = []
-        for promise_json in promise_creation_jsons:
+        for promise_json in filtered_promise_jsons:
             citation_jsons = promise_json["citations"]
             assert len(citation_jsons) > 0, \
                 "Unexpectedly got no citations for extracted promise. This is a system error."
@@ -100,6 +82,31 @@ def construct_promise_jsons(name: str, urls: list[str]) -> list[dict]:
             else:
                 promise_dicts.append(promise_dict)
     return promise_dicts
+
+
+def deduplicate_promises(promise_dicts: list[dict]) -> list[dict]:
+    filtered_promise_dicts = []
+
+    promise_idxs = set(range(len(promise_dicts)))
+    while promise_idxs:
+        this_idx = promise_idxs.pop()
+        dup_idxs = [other_idx for other_idx in promise_idxs if cosine_similarity(
+            promise_dicts[this_idx]['embedding'], promise_dicts[other_idx]['embedding']) >= 0.7]
+        # Break ties in favor of longer promise text, for now.
+        longest_promise = promise_dicts[this_idx]
+        for idx in dup_idxs:
+            promise_idxs.remove(idx)
+            dup_promise = promise_dicts[idx]
+            if len(dup_promise['text']) > len(longest_promise['text']):
+                longest_promise = dup_promise
+
+        with Session(engine) as session:
+            duplicate = session.exec(select(Promise).filter(
+                Promise.embedding.cosine_distance(longest_promise['embedding']) < 0.3).limit(1)).first()
+            # Regardless of length, existing promises take precedence.
+            if duplicate is None:
+                filtered_promise_dicts.append(longest_promise)
+    return filtered_promise_dicts
 
 
 def _get_article_text(url: str) -> str | None:
@@ -148,15 +155,17 @@ def _chunked_text_iterator(text: str) -> Generator[str, None, None]:
 
 
 def _get_promises_from_extract(extract: str, candidate_name: str, url: str) -> dict[str, Any] | None:
+    sys_prompt_template = prompts.PROMISE_EXTRACTION_SYSTEM_PROMPT
     messages = [
-        {"role": "system", "content": PROMISE_SYSTEM_PROMPT.replace("{{name}}", candidate_name)},
+        {"role": "system", "content": sys_prompt_template.replace("{{name}}", candidate_name)},
         {"role": "user", "content": extract}
     ]
 
+    # TODO nmecklenburg: account for length limit errors
     response = client.beta.chat.completions.parse(
         model=settings.OPENAI_MODEL_NAME,
         messages=messages,
-        max_tokens=800,
+        max_tokens=1200,
         temperature=0.7,
         top_p=0.95,
         frequency_penalty=0,
@@ -181,8 +190,9 @@ def _get_promises_from_extract(extract: str, candidate_name: str, url: str) -> d
     logger.info(f"Article extract: {raw_promise.exact_quote}")
     return {
         "_timestamp": datetime.now(),
-        "status": PromiseStatus.PROGRESSING,
+        "status": constants.PromiseStatus.PROGRESSING,
         "text": raw_promise.promise_text,
+        "embedding": get_promise_embedding(raw_promise.promise_text),
         "citations": [
             {
                 "date": datetime.now(),
