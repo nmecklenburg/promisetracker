@@ -1,25 +1,28 @@
-import { useState, useEffect } from 'react'
-import api from './api'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import './App.css';
+import PromiseCard from './PromiseCard';
 
-const App = () => {
-  const [data, setData] = useState(null)
-
-  const fetchData = async () => {
-    const response = await api.get('/candidates');
-    setData(response.data);
-  }
-
-  useEffect(() => {
-    fetchData();
-  }
-  , []);
-
+const Home = () => {
   return (
     <div>
-      {data ?? "No data found"}
+      <h1>Home Page</h1>
+      <Link to="/promise-card">
+        <button>View Promise Card</button>
+      </Link>
     </div>
   );
-}
+};
 
-export default App
+const App = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/promise-card" element={<PromiseCard />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;

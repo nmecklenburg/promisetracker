@@ -40,3 +40,13 @@
 .read-the-docs {
   color: #888;
 }
+
+.page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full viewport height */
+  text-align: center;
+  font-family: Arial, sans-serif;
+  margin: 0;
+}
