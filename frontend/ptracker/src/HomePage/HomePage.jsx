@@ -1,11 +1,13 @@
 import React from "react";
-import CandidateProfile from './CandidateProfile';
-
+import CandidateProfile from "./CandidateProfile";
+import PromisesList from "./PromisesList";
 
 const HomePage = ({ candidate }) => {
-
   return (
-    candidate ? <CandidateProfile candidate={candidate} /> : "No data found"
+    <>
+      <CandidateProfile candidate={candidate} />
+      <PromisesList candidate={candidate} />
+    </>
   );
 };
 
