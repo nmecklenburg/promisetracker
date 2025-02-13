@@ -19,3 +19,5 @@ Load the environment variables, such as by running:
 Finally, boot up the backend! This may seed the database depending on if tables are missing / empty. From the backend directory, run `source startup.sh`. You should find the server boots up on `http://localhost:8000/` according to the startup logs; refer to `http://localhost:8000/docs` for the list of available routes currently supported by the app.
 
 The backend is booted with reloading for local development mode (controllable via the `environment` config); make your backend changes, save the file, and you should see the updates occur live in the app if the backend is running.
+
+To run the frontend, from the `frontend/ptracker` directory, run `npm install`. This should install all the dependencies. Then, run `npm run dev` to run the server on localhost.
