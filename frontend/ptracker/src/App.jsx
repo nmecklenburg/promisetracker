@@ -1,25 +1,104 @@
-import { useState, useEffect } from 'react'
-import api from './api'
-import './App.css'
+import { useState, useEffect } from 'react';
+import HomePage from './HomePage/HomePage';
+import AboutPage from './AboutPage/AboutPage';
+import ContactPage from './ContactPage/ContactPage';
+import LoginPage from './LoginPage/LoginPage';
+import PoliticiansPage from './PoliticiansPage/PoliticiansPage';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import api from './api';
+
+const Navbar = () => {
+  return (
+    <nav style={styles.navbar}>
+      <div style={styles.logo}>
+        <span style={styles.logoP}>P</span>
+        <span style={styles.logoT}>T</span>
+      </div>
+      <ul style={styles.navLinks}>
+        <li style={styles.navItem}><Link to="/" style={styles.navLink}>Home</Link></li>
+        <li style={styles.navItem}><Link to="/about" style={styles.navLink}>About Us</Link></li>
+        <li style={styles.navItem}><Link to="/politicians" style={styles.navLink}>Politicians</Link></li>
+        <li style={styles.navItem}><Link to="/contact" style={styles.navLink}>Contact Us</Link></li>
+        <li style={styles.navItem}><Link to="/login" style={styles.navLink}>Login/Signup</Link></li>
+      </ul>
+    </nav>
+  );
+};
 
 const App = () => {
-  const [data, setData] = useState(null)
+  const [data, setData] = useState(null);
 
   const fetchData = async () => {
-    const response = await api.get('/candidates');
-    setData(response.data);
-  }
+    try {
+      const response = await api.get('/api/v1/candidates/3');
+      console.log(response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   useEffect(() => {
     fetchData();
-  }
-  , []);
+  }, []);
 
   return (
-    <div>
-      {data ?? "No data found"}
-    </div>
+    <Router>
+      <Navbar />
+      <div>
+        <Routes>
+          <Route path="/" element={<HomePage candidate={data} />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/politicians" element={<PoliticiansPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
-}
+};
 
-export default App
+const styles = {
+  navbar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '15px 30px',
+    fontFamily: "Arial, sans-serif",
+  },
+  logo: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+  },
+  logoP: {
+    color: 'blue',
+    fontWeight: 'bold',
+  },
+  logoT: {
+    color: 'brown',
+    fontWeight: 'bold',
+  },
+  navLinks: {
+    listStyle: 'none',
+    display: 'flex',
+    gap: '20px',
+    padding: 0,
+    margin: 0,
+  },
+  navItem: {
+    display: 'inline',
+  },
+  navLink: {
+    textDecoration: 'none',
+    color: 'black',
+    fontWeight: 'bold',
+  },
+  navLinkHover: {
+    color: 'gray',
+  },
+  content: {
+    padding: '20px',
+  },
+};
+
+export default App;
