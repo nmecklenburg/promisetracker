@@ -5,7 +5,6 @@ import api from '../api'
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
-
 const HomePage = () => {
   const { candidateId } = useParams();
 
