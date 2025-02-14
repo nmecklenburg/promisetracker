@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
 import HomePage from './HomePage/HomePage';
 import AboutPage from './AboutPage/AboutPage';
 import ContactPage from './ContactPage/ContactPage';
 import LoginPage from './LoginPage/LoginPage';
 import PoliticiansPage from './PoliticiansPage/PoliticiansPage';
+import PromiseCard from './PromiseCard'
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import api from './api';
 
 const Navbar = () => {
   return (
@@ -26,32 +25,18 @@ const Navbar = () => {
 };
 
 const App = () => {
-  const [data, setData] = useState(null);
-
-  const fetchData = async () => {
-    try {
-      const response = await api.get('/api/v1/candidates/3');
-      console.log(response.data);
-      setData(response.data);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   return (
     <Router>
       <Navbar />
       <div>
         <Routes>
-          <Route path="/" element={<HomePage candidate={data} />} />
+          <Route path="/:candidateId?" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/politicians" element={<PoliticiansPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/promise-card/:candidateId" element={<PromiseCard />} />
         </Routes>
       </div>
     </Router>

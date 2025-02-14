@@ -36,22 +36,21 @@ export default CandidateProfile;
 
 const styles = {
   card: {
-    marginTop: "50px",
+    marginTop: "70px",
     position: "relative",
     background: "white",
     borderRadius: "10px",
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
     fontFamily: "Arial, sans-serif",
-    width: "100%",
+    marginBottom: "50px"
   },
   blueBar: {
     background: "#7DAFF5",
     display: "flex",
     alignItems: "center",
     padding: "20px",
-    height: "180px", // Slightly increased height for better proportions
+    height: "220px",
     position: "relative",
-    width: "100%",
   },
   imageContainer: {
     flexShrink: 0,
@@ -72,24 +71,24 @@ const styles = {
   },
   content: {
     flex: 1,
-    marginLeft: "10px", // Adjusted to match new image size
+    marginLeft: "10px", 
     color: "black",
   },
   title: {
-    fontSize: "26px",
-    fontWeight: "bold",
+    fontSize: "60px",
+    fontWeight: "500",
     margin: "5px 0",
   },
   subtitle: {
-    fontSize: "18px",
+    fontSize: "28px",
     fontWeight: "normal",
   },
   date: {
-    fontSize: "14px",
+    fontSize: "16px",
     marginBottom: "10px",
   },
   description: {
-    fontSize: "14px",
+    fontSize: "16px",
     lineHeight: "1.4",
   },
 };
