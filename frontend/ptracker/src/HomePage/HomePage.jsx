@@ -12,7 +12,7 @@ const HomePage = () => {
 
   const fetchData = async () => {
     try {
-      const response = await api.get(`/api/v1/candidates/${candidateId ? candidateId : 3}`); // have daniel lurie as default for now
+      const response = await api.get(`/api/v1/candidates/${candidateId}`); // have daniel lurie as default for now
       console.log(response.data);
       setData(response.data);
     } catch (error) {

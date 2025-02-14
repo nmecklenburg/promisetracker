@@ -3,6 +3,7 @@ import AboutPage from './AboutPage/AboutPage';
 import ContactPage from './ContactPage/ContactPage';
 import LoginPage from './LoginPage/LoginPage';
 import PoliticiansPage from './PoliticiansPage/PoliticiansPage';
+import PromiseCard from './PromiseCard'
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 
 const Navbar = () => {
