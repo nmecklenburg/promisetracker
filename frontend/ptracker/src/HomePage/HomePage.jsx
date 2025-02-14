@@ -7,12 +7,13 @@ import { useParams } from 'react-router-dom';
 
 const HomePage = () => {
   const { candidateId } = useParams();
+  const resolvedCandidateId = candidateId || "3";
 
   const [data, setData] = useState(null);
 
   const fetchData = async () => {
     try {
-      const response = await api.get(`/api/v1/candidates/${candidateId}`); // have daniel lurie as default for now
+      const response = await api.get(`/api/v1/candidates/${resolvedCandidateId}`); // have daniel lurie as default for now
       console.log(response.data);
       setData(response.data);
     } catch (error) {
