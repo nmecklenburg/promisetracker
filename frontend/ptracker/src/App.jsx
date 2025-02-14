@@ -35,6 +35,7 @@ const App = () => {
           <Route path="/politicians" element={<PoliticiansPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/promise-card/:candidateId" element={<PromiseCard />} />
         </Routes>
       </div>
     </Router>
