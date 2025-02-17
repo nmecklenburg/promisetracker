@@ -39,6 +39,7 @@ class Settings(BaseSettings):
 
     CITATION_EXTRACT_LENGTH: int
     PROMISE_EMBEDDING_DIM: int
+    ACTION_EMBEDDING_DIM: int
 
     @computed_field
     @property

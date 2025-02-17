@@ -13,11 +13,12 @@ from sqlmodel import (
 from typing import Annotated, Generator
 
 from ptracker.api.models import (
+    Action,
     Candidate,
     Promise,
     Citation,
 )
-from ptracker.core.llm_utils import get_promise_embedding
+from ptracker.core.llm_utils import get_action_embedding, get_promise_embedding
 from ptracker.core.settings import settings
 from ptracker.core.utils import get_logger
 
@@ -59,60 +60,74 @@ def init_db(session: Session) -> None:
     # Create candidates, promises, citations, and links tables.
     SQLModel.metadata.create_all(engine)
 
-    index_name = "prom_embeds"
-    query = text(f"SELECT indexname FROM pg_indexes WHERE indexname = '{index_name}' LIMIT 1")
-    if session.exec(query).first() is None:
-        Index(index_name,
-              Promise.embedding,
-              postgresql_using='hnsw',
-              postgresql_with={'m': 16, 'ef_construction': 64},
-              postgresql_ops={'embedding': 'vector_cosine_ops'}).create(engine)
-    else:
-        logger.info(f"Index {index_name} already exists, so will not recreate it.")
+    index_names = ["action_embeds", "prom_embeds"]
+    for index_name, model in zip(index_names, (Action, Promise)):
+        query = text(f"SELECT indexname FROM pg_indexes WHERE indexname = '{index_name}' LIMIT 1")
+        if session.exec(query).first() is None:
+            Index(index_name,
+                  model.embedding,
+                  postgresql_using='hnsw',
+                  postgresql_with={'m': 16, 'ef_construction': 64},
+                  postgresql_ops={'embedding': 'vector_cosine_ops'}).create(engine)
+        else:
+            logger.info(f"Index {index_name} already exists, so will not recreate it.")
 
     query = select(Candidate)
     results = session.exec(query)
 
     # Seed the database with some entries if it's empty.
     if not results.all():
-        citation = Citation(date=datetime.now(),
-                            url="https://www.nytimes.com/2024/09/26/us/politics/harris-trump-economy.html",
-                            extract="Sample extract text snipped from article via AI.")
+        promise_citation = Citation(date=datetime.now(),
+                                    url="https://www.nytimes.com/2024/09/26/us/politics/harris-trump-economy.html",
+                                    extract="Sample extract text snipped from article via AI.")
         ptext = "Lower costs, reduce regulations, cut taxes for the middle class, and incentivize corporations to " \
                 "build their products in the United States."
         promise = Promise(text=ptext,
                           _timestamp=datetime.today(),
                           status=0,
-                          citations=[citation],
+                          citations=[promise_citation],
                           embedding=get_promise_embedding(ptext))
         candidate = Candidate(name="Kamala Harris",
                               description="Candidate for 2024 US presidential election with Tim Walz as running mate.",
                               promises=[promise])
+        action_citation = Citation(date=datetime.now(),
+                                   url="https://www.nytimes.com/2025/01/21/us/politics/harris-tariffs-action.html",
+                                   extract="Sample extract text snipped from article via AI, but for an action!")
+        atext = "Signed into law various import tariffs on foreign goods competing with US manufacturers."
+        action = Action(text=atext,
+                        date=datetime.today(),
+                        citations=[action_citation],
+                        promises=[promise],
+                        embedding=get_action_embedding(atext))
 
-        second_citation = Citation(date=datetime.now(),
-                                   url="https://www.google.com",
-                                   extract="Sample extract text snipped from article via AI.")
+        promise_citation2 = Citation(date=datetime.now(),
+                                     url="https://www.google.com",
+                                     extract="Sample extract text snipped from article via AI.")
         ptext2 = "Sample promise from article."
-        second_promise = Promise(text=ptext2,
-                                 _timestamp=datetime.today(),
-                                 status=0,
-                                 citations=[second_citation],
-                                 embedding=get_promise_embedding(ptext2))
-        second_candidate = \
+        promise2 = Promise(text=ptext2,
+                           _timestamp=datetime.today(),
+                           status=0,
+                           citations=[promise_citation2],
+                           embedding=get_promise_embedding(ptext2))
+        candidate2 = \
             Candidate(name="Joe Biden",
                       description="Candidate for 2020 US presidential election with Kamala Harris as running mate.",
-                      promises=[second_promise])
+                      promises=[promise2])
 
         session.add(candidate)
-        session.add(second_candidate)
+        session.add(candidate2)
         session.commit()
 
-        session.refresh(citation)
+        session.refresh(promise_citation)
+        session.refresh(action_citation)
         session.refresh(promise)
+        session.refresh(action)
         session.refresh(candidate)
 
         logger.info(f"Seeded database with candidate {candidate}.")
         logger.info(f"Seeded database with promise {promise}.")
-        logger.info(f"Seeded database with citation {citation}.")
+        logger.info(f"Seeded database with action {action}.")
+        logger.info(f"Seeded database with promise citation {promise_citation}.")
+        logger.info(f"Seeded database with action citation {action_citation}.")
     else:
         logger.info("Queried database found to have non-empty candidates table, so skipping seed process.")
