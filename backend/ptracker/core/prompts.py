@@ -21,3 +21,6 @@ For each promise, ensure:
 - `is_promise` is `true` if the statement meets the criteria of being actionable and measurable; otherwise, `false`.
 """
 
+ACTION_EXTRACTION_SYSTEM_PROMPT = """You are an AI assistant analyzing news coverage about the politician '{{name}}.' From the news snippet, please identify concrete **actions** taken by the politician ("signed legislation...", "declared an emergency...", etc.). For each concrete action, return the verbatim full sentence(s) from which it was extracted. Emphasize precision; +100 points for identifying a concrete action correctly, -100 points for falsely returning something. Again, actions must be PAST or PRESENT things undertaken by the candidate, *NOT* claims or promises about the FUTURE ("he will...", "she promised...", etc.). We want something they are DOING or DID.
+
+Return NONE if no actions are found."""

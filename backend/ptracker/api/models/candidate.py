@@ -18,11 +18,13 @@ class CandidateUpdate(SQLModel):
 class Candidate(CandidateBase, table=True):
     id: int = Field(default=None, primary_key=True)
     promises: list["Promise"] = Relationship(back_populates="candidate", cascade_delete=True)  # noqa: F821
+    actions: list["Action"] = Relationship(back_populates="candidate", cascade_delete=True)  # noqa: F821
 
 
 class CandidatePublic(CandidateBase):
     id: int
     promises: int = Field(description="Number of promises tracked for this candidate.")
+    actions: int = Field(description="Number of actions associated with this candidate.")
 
 
 class CandidatesPublic(SQLModel):
