@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import { FaPen } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 
 const styles = {
   table: {
@@ -129,7 +130,11 @@ const PromisesTable = ({ candidate }) => {
         <tbody>
           {currentPromises.map((promise) => (
             <tr key={promise.id}>
-              <td style={styles.td}>{promise.text}</td>
+              <td style={styles.td}>
+              <Link to={`/promise-card/${candidate.id}`}>
+                {promise.text}
+                </Link>
+                </td>
               <td style={styles.td}>
                 <span style={styles.category}>Economy</span>
                 <span style={styles.category}>Health</span>
