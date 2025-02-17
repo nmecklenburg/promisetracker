@@ -12,12 +12,14 @@ class CitationBase(SQLModel):
     promise_id: Optional[int] = Field(default=None, foreign_key="promise.id", ondelete="CASCADE")
     action_id: Optional[int] = Field(default=None, foreign_key="action.id", ondelete="CASCADE")
 
-    @model_validator(mode='before')
-    def ensure_parent_xor(self, properties):
-        null_promise = properties.get("promise_id") is None
-        null_action = properties.get("action_id") is None
+    @model_validator(mode='after')
+    def ensure_parent_xor(self):
+        null_promise = self.promise_id is None
+        null_action = self.action_id is None
         # One is null but not both.
         assert (null_promise or null_action) and not (null_promise and null_action)
+
+        return self
 
 
 class CitationCreate(SQLModel):

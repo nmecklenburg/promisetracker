@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from openai import OpenAI
+from openai import OpenAI, LengthFinishReasonError
 from pydantic import BaseModel
 from sqlmodel import select, Session
 from typing import Any
@@ -79,17 +79,21 @@ class PromiseExtractor(EntityExtractor):
             {"role": "user", "content": extract}
         ]
 
-        response = client.beta.chat.completions.parse(
-            model=settings.OPENAI_MODEL_NAME,
-            messages=messages,
-            max_tokens=1200,
-            temperature=0.7,
-            top_p=0.95,
-            frequency_penalty=0,
-            presence_penalty=0,
-            stop=None,
-            response_format=LLMPromiseResponse,
-        )
+        try:
+            response = client.beta.chat.completions.parse(
+                model=settings.OPENAI_MODEL_NAME,
+                messages=messages,
+                max_tokens=1200,
+                temperature=0.7,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stop=None,
+                response_format=LLMPromiseResponse,
+            )
+        except LengthFinishReasonError:
+            return None  # Squash this for now.
+
         raw_promise = response.choices[0].message.parsed
 
         if raw_promise is None:
@@ -178,17 +182,21 @@ class ActionExtractor(EntityExtractor):
             {"role": "user", "content": extract}
         ]
 
-        response = client.beta.chat.completions.parse(
-            model=settings.OPENAI_MODEL_NAME,
-            messages=messages,
-            max_tokens=1200,
-            temperature=0.7,
-            top_p=0.95,
-            frequency_penalty=0,
-            presence_penalty=0,
-            stop=None,
-            response_format=LLMActionResponse,
-        )
+        try:
+            response = client.beta.chat.completions.parse(
+                model=settings.OPENAI_MODEL_NAME,
+                messages=messages,
+                max_tokens=1200,
+                temperature=0.7,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stop=None,
+                response_format=LLMActionResponse,
+            )
+        except LengthFinishReasonError:
+            return None  # Squash this for now.
+
         action_response_object = response.choices[0].message.parsed
         action_info_list = action_response_object.actions
         if not action_info_list:

@@ -16,6 +16,7 @@ from ptracker.api.models import (
 from ptracker.core import constants
 from ptracker.core.db import SessionArg
 from ptracker.core.llm_utils import get_action_embedding, fetch_promises_by_embedding
+from ptracker.core.settings import settings
 
 router = APIRouter(prefix="/candidates/{candidate_id}/actions", tags=["actions"])
 nested_promise_router = APIRouter(prefix="/candidates/{candidate_id}/promises/{promise_id}/actions", tags=["actions"])
@@ -74,7 +75,7 @@ def read_action(session: SessionArg, candidate_id: int, action_id: int) -> Any:
 @nested_promise_router.get("/{action_id}")
 def read_nested_action(session: SessionArg, candidate_id: int, promise_id: int, action_id: int) -> Any:
     _validate_promise(session=session, candidate_id=candidate_id, promise_id=promise_id)
-    redirect_uri = router.prefix + "/{action_id}"
+    redirect_uri = settings.API_VERSION_STRING + router.prefix + "/{action_id}"
     return RedirectResponse(redirect_uri.format(candidate_id=candidate_id, action_id=action_id))
 
 

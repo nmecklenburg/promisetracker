@@ -28,7 +28,7 @@ class Action(ActionBase, table=True):
     id: int = Field(default=None, primary_key=True)
     candidate_id: int = Field(foreign_key="candidate.id", ondelete="CASCADE")
     candidate: "Candidate" = Relationship(back_populates="actions")  # noqa: F821
-    citations: list["Citation"] = Relationship(back_populates="parent", cascade_delete=True)  # noqa: F821
+    citations: list["Citation"] = Relationship(back_populates="action", cascade_delete=True)  # noqa: F821
     promises: list["Promise"] = Relationship(back_populates="actions", link_model=PromiseActionLink)  # noqa: F821
     embedding: Any = Field(default=None, sa_column=Column(Vector(settings.ACTION_EMBEDDING_DIM)))
 

@@ -70,7 +70,7 @@ def read_candidate(session: SessionArg, candidate_id: int) -> Any:
         raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
 
     num_promises = _get_promises_helper(session, candidate.id)
-    num_actions = _get_actions_helper(session.session, candidate.id)
+    num_actions = _get_actions_helper(session, candidate.id)
     return CandidatePublic.model_validate(candidate, update={"promises": num_promises,
                                                              "actions": num_actions})
 

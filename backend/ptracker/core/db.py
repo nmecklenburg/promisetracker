@@ -87,9 +87,6 @@ def init_db(session: Session) -> None:
                           status=0,
                           citations=[promise_citation],
                           embedding=get_promise_embedding(ptext))
-        candidate = Candidate(name="Kamala Harris",
-                              description="Candidate for 2024 US presidential election with Tim Walz as running mate.",
-                              promises=[promise])
         action_citation = Citation(date=datetime.now(),
                                    url="https://www.nytimes.com/2025/01/21/us/politics/harris-tariffs-action.html",
                                    extract="Sample extract text snipped from article via AI, but for an action!")
@@ -99,6 +96,10 @@ def init_db(session: Session) -> None:
                         citations=[action_citation],
                         promises=[promise],
                         embedding=get_action_embedding(atext))
+        candidate = Candidate(name="Kamala Harris",
+                              description="Candidate for 2024 US presidential election with Tim Walz as running mate.",
+                              promises=[promise],
+                              actions=[action])
 
         promise_citation2 = Citation(date=datetime.now(),
                                      url="https://www.google.com",
