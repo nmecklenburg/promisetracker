@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './PromiseCard.css';
 
-const PromiseCard = () => {
-  const { candidateId } = useParams(); // Get candidateId from the URL
+const PromiseCard = ({candidateId}) => {
   const [candidate, setCandidate] = useState(null); // Store candidate details
   const [promises, setPromises] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,8 +89,6 @@ const PromiseCard = () => {
 
   return (
     <div className="promise-card">
-      <h1>{candidate?.name}</h1>
-
       {/* Progress Bar */}
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${progressPercentage}%` }}>

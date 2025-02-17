@@ -18,7 +18,8 @@ const styles = {
       fontSize: "32px",
       fontWeight: "500",
       fontFamily: "Arial, sans-serif",
-      textAlign: "center"
+      textAlign: "center",
+      paddingTop: "30px"
     },
   };
   

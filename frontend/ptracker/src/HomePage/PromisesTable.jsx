@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import { FaPen } from "react-icons/fa";
-import { Link } from 'react-router-dom';
 
 const styles = {
   table: {
@@ -29,7 +28,7 @@ const styles = {
     marginRight: "8px",
   },
   status: {
-    Launched: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#99C3FF", border: "1px solid #355581" },
+    Progressing: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#99C3FF", border: "1px solid #355581" },
     Compromised: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#FFF0A2", border: "1px solid #AB9629" },
     Delivered: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#B7FFB5", border: "1px solid #59E000" },
     Broken: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#FF9C9C", border: "1px solid #DF0404" },
@@ -79,7 +78,7 @@ const styles = {
   },
 };
 
-const statusLabels = ["Launched", "Compromised", "Delivered", "Broken"];
+const statusLabels = ["Progressing", "Compromised", "Delivered", "Broken"];
 
 const PromisesTable = ({ candidate }) => {
   if (!candidate) {
@@ -131,9 +130,7 @@ const PromisesTable = ({ candidate }) => {
           {currentPromises.map((promise) => (
             <tr key={promise.id}>
               <td style={styles.td}>
-              <Link to={`/promise-card/${candidate.id}`}>
                 {promise.text}
-                </Link>
                 </td>
               <td style={styles.td}>
                 <span style={styles.category}>Economy</span>
