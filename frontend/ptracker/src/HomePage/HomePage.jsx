@@ -26,6 +26,10 @@ const HomePage = () => {
     fetchData();
   }, []);
 
+  if (!data) {
+    return <p>Loading...</p>;
+  }
+
   return (
     <>
       <CandidateProfile candidate={data} />

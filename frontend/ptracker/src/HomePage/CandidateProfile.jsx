@@ -1,9 +1,6 @@
 import React from "react";
 
 const CandidateProfile = ({ candidate }) => {
-  if (!candidate) {
-    return <p>No candidates found</p>;
-  }
 
   return (
     <div style={styles.card}>

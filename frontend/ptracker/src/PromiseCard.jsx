@@ -7,7 +7,6 @@ import CategoryLabel from "./HomePage/CategoryLabel";
 const PromiseCard = ({ candidateId }) => {
   const [candidate, setCandidate] = useState(null); // Store candidate details
   const [promises, setPromises] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [promiseCounts, setPromiseCounts] = useState({
     progressing: 0,
@@ -65,11 +64,9 @@ const PromiseCard = ({ candidateId }) => {
 
         setPromises(fetchedPromises);
         setPromiseCounts(counts);
-        setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to fetch data");
-        setLoading(false);
       }
     };
 
@@ -86,7 +83,6 @@ const PromiseCard = ({ candidateId }) => {
     ? Math.round((promiseCounts.completed / totalPromises) * 100)
     : 0;
 
-  if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
   return (
