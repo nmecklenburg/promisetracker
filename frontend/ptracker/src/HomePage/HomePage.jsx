@@ -4,6 +4,7 @@ import PromisesList from "./PromisesList";
 import api from '../api'
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import PromiseCard from "../PromiseCard";
 
 const HomePage = () => {
   const { candidateId } = useParams();
@@ -25,9 +26,14 @@ const HomePage = () => {
     fetchData();
   }, []);
 
+  if (!data) {
+    return <p>Loading...</p>;
+  }
+
   return (
     <>
       <CandidateProfile candidate={data} />
+      <PromiseCard candidateId={resolvedCandidateId} />
       <PromisesList candidate={data} />
     </>
   );

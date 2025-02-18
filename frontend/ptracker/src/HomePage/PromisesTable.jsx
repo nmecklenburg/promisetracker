@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import { FaPen } from "react-icons/fa";
+import StatusLabel from "./StatusLabel";
+import CategoryLabel from "./CategoryLabel";
 
 const styles = {
   table: {
@@ -20,19 +22,6 @@ const styles = {
     borderBottom: "1px solid #EEEEEE",
     padding: "12px",
   },
-  category: {
-    display: "inline-block",
-    backgroundColor: "#e0e0e0",
-    padding: "4px 10px",
-    borderRadius: "10px",
-    marginRight: "8px",
-  },
-  status: {
-    Launched: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#99C3FF", border: "1px solid #355581" },
-    Compromised: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#FFF0A2", border: "1px solid #AB9629" },
-    Delivered: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#B7FFB5", border: "1px solid #59E000" },
-    Broken: { padding: "6px 12px", color: "black", borderRadius: "4px", backgroundColor: "#FF9C9C", border: "1px solid #DF0404" },
-  },
   editButton: {
     padding: "6px",
     borderRadius: "4px",
@@ -49,7 +38,7 @@ const styles = {
     alignItems: "center",
     margin: "16px auto",
     width: "95%",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   paginationText: {
     fontFamily: "Arial, sans-serif",
@@ -78,7 +67,7 @@ const styles = {
   },
 };
 
-const statusLabels = ["Launched", "Compromised", "Delivered", "Broken"];
+const statusLabels = ["Progressing", "Compromised", "Delivered", "Broken"];
 
 const PromisesTable = ({ candidate }) => {
   if (!candidate) {
@@ -92,7 +81,9 @@ const PromisesTable = ({ candidate }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get(`/api/v1/candidates/${candidate.id}/promises`);
+        const response = await api.get(
+          `/api/v1/candidates/${candidate.id}/promises`
+        );
         setPromises(response.data.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -105,7 +96,10 @@ const PromisesTable = ({ candidate }) => {
   // Pagination logic
   const indexOfLastPromise = currentPage * promisesPerPage;
   const indexOfFirstPromise = indexOfLastPromise - promisesPerPage;
-  const currentPromises = promises.slice(indexOfFirstPromise, indexOfLastPromise);
+  const currentPromises = promises.slice(
+    indexOfFirstPromise,
+    indexOfLastPromise
+  );
   const totalPages = Math.ceil(promises.length / promisesPerPage);
 
   const handlePageChange = (pageNumber) => {
@@ -131,20 +125,23 @@ const PromisesTable = ({ candidate }) => {
             <tr key={promise.id}>
               <td style={styles.td}>{promise.text}</td>
               <td style={styles.td}>
-                <span style={styles.category}>Economy</span>
-                <span style={styles.category}>Health</span>
+                <CategoryLabel key="Economy" category="Economy" />
+                <CategoryLabel key="Health" category="Health" />
               </td>
               <td style={{ ...styles.td, ...styles.centeredText }}>
                 {promise.citations ? (
-                  <a href="#" style={{ color: "#3498db", textDecoration: "underline" }}>{promise.citations}</a>
+                  <a
+                    href="#"
+                    style={{ color: "#3498db", textDecoration: "underline" }}
+                  >
+                    {promise.citations}
+                  </a>
                 ) : (
                   "N/A"
                 )}
               </td>
               <td style={styles.td}>
-                <span style={styles.status[statusLabels[promise.status]]}>
-                  {statusLabels[promise.status]}
-                </span>
+                <StatusLabel status={statusLabels[promise.status]} />
               </td>
               <td style={styles.td}>
                 <button style={styles.editButton}>
@@ -162,7 +159,8 @@ const PromisesTable = ({ candidate }) => {
           {/* Left-aligned text */}
           <p style={styles.paginationText}>
             Showing {indexOfFirstPromise + 1}-
-            {Math.min(indexOfLastPromise, promises.length)} promises of {promises.length}
+            {Math.min(indexOfLastPromise, promises.length)} promises of{" "}
+            {promises.length}
           </p>
 
           {/* Right-aligned pagination buttons */}
