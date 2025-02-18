@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import './PromiseCard.css';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "./PromiseCard.css";
+import StatusLabel from "./HomePage/StatusLabel";
+import CategoryLabel from "./HomePage/CategoryLabel";
 
-const PromiseCard = ({candidateId}) => {
+const PromiseCard = ({ candidateId }) => {
   const [candidate, setCandidate] = useState(null); // Store candidate details
   const [promises, setPromises] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +67,8 @@ const PromiseCard = ({candidateId}) => {
         setPromiseCounts(counts);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch data');
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch data");
         setLoading(false);
       }
     };
@@ -91,7 +93,10 @@ const PromiseCard = ({candidateId}) => {
     <div className="promise-card">
       {/* Progress Bar */}
       <div className="progress-bar-container">
-        <div className="progress-bar" style={{ width: `${progressPercentage}%` }}>
+        <div
+          className="progress-bar"
+          style={{ width: `${progressPercentage}%` }}
+        >
           {progressPercentage}%
         </div>
       </div>
@@ -101,36 +106,50 @@ const PromiseCard = ({candidateId}) => {
 
       {/* Visualization */}
       <div className="promise-visualization">
-        <div className="visualization-card" style={{ backgroundColor: '#a2f3b6' }}>
+        <div
+          className="visualization-card"
+          style={{ backgroundColor: "#a2f3b6" }}
+        >
           <h2>{promiseCounts.completed}</h2>
           <p>
             promises <strong>completed</strong>
           </p>
         </div>
-        <div className="visualization-card" style={{ backgroundColor: '#add8e6' }}>
+        <div
+          className="visualization-card"
+          style={{ backgroundColor: "#add8e6" }}
+        >
           <h2>{promiseCounts.progressing}</h2>
           <p>
             promises <strong>progressing</strong>
           </p>
         </div>
-        <div className="visualization-card" style={{ backgroundColor: '#fff6a5' }}>
+        <div
+          className="visualization-card"
+          style={{ backgroundColor: "#fff6a5" }}
+        >
           <h2>{promiseCounts.compromised}</h2>
           <p>
             promises <strong>compromised</strong>
           </p>
         </div>
-        <div className="visualization-card" style={{ backgroundColor: '#f8b6b6' }}>
+        <div
+          className="visualization-card"
+          style={{ backgroundColor: "#f8b6b6" }}
+        >
           <h2>{promiseCounts.broken}</h2>
           <p>
             promises <strong>broken</strong>
           </p>
         </div>
       </div>
-      
+
       <h1>Top Promises to Watch</h1>
       {/* List of Promises - Display only the first 4 */}
       {promises.slice(0, 4).map((promise) => {
-        const { text: statusText, color: statusColor } = getStatusDetails(promise.status);
+        const { text: statusText, color: statusColor } = getStatusDetails(
+          promise.status
+        );
 
         return (
           <div
@@ -140,16 +159,11 @@ const PromiseCard = ({candidateId}) => {
           >
             <p className="description">{promise.text}</p>
             <div className="status">
-              <strong>Status:</strong>{' '}
-              <span
-                className="status-badge"
-                style={{ backgroundColor: statusColor }}
-              >
-                {statusText}
-              </span>
+              <strong>Status:</strong> <StatusLabel status={statusText} />
             </div>
             <div className="category">
-              <strong>Category:</strong> <span className="category-economy">Economy</span>
+              <strong>Category:</strong>{" "}
+              <CategoryLabel key={"Economy"} category={"Economy"} />
             </div>
             <div className="related-articles">
               <strong>Related Articles:</strong>
@@ -170,15 +184,15 @@ const PromiseCard = ({candidateId}) => {
   function getStatusDetails(status) {
     switch (status) {
       case 0:
-        return { text: 'Progressing', color: 'blue' };
+        return { text: "Progressing", color: "blue" };
       case 1:
-        return { text: 'Complete', color: 'green' };
+        return { text: "Complete", color: "green" };
       case 2:
-        return { text: 'Broken', color: 'red' };
+        return { text: "Broken", color: "red" };
       case 3:
-        return { text: 'Compromised', color: 'yellow' };
+        return { text: "Compromised", color: "yellow" };
       default:
-        return { text: 'Unknown', color: 'gray' };
+        return { text: "Unknown", color: "gray" };
     }
   }
 };
