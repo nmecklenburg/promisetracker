@@ -15,7 +15,6 @@ const HomePage = () => {
   const fetchData = async () => {
     try {
       const response = await api.get(`/api/v1/candidates/${resolvedCandidateId}`); // have daniel lurie as default for now
-      console.log(response.data);
       setData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);

@@ -3,6 +3,7 @@ import api from "../api";
 import { FaPen } from "react-icons/fa";
 import StatusLabel from "./StatusLabel";
 import CategoryLabel from "./CategoryLabel";
+import PromisePopup from "./PromisePopup";
 
 const styles = {
   table: {
@@ -77,6 +78,7 @@ const PromisesTable = ({ candidate }) => {
   const [promises, setPromises] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const promisesPerPage = 10;
+  const [selectedPromise, setSelectedPromise] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +86,7 @@ const PromisesTable = ({ candidate }) => {
         const response = await api.get(
           `/api/v1/candidates/${candidate.id}/promises`
         );
+        console.log(response.data);
         setPromises(response.data.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -108,6 +111,14 @@ const PromisesTable = ({ candidate }) => {
     }
   };
 
+  const openPopup = (promise) => {
+    setSelectedPromise(promise);
+  };
+
+  const closePopup = () => {
+    setSelectedPromise(null);
+  };
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={styles.table}>
@@ -123,7 +134,9 @@ const PromisesTable = ({ candidate }) => {
         <tbody>
           {currentPromises.map((promise) => (
             <tr key={promise.id}>
-              <td style={styles.td}>{promise.text}</td>
+              <td style={styles.td} onClick={() => openPopup(promise)}>
+                {promise.text}
+              </td>
               <td style={styles.td}>
                 <CategoryLabel key="Economy" category="Economy" />
                 <CategoryLabel key="Health" category="Health" />
@@ -223,6 +236,7 @@ const PromisesTable = ({ candidate }) => {
           </div>
         </div>
       )}
+      <PromisePopup promise={selectedPromise} candidateId={candidate.id} onClose={closePopup} />
     </div>
   );
 };
