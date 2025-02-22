@@ -108,6 +108,8 @@ class PromiseExtractor(EntityExtractor):
             )
             return None
 
+        # Truncate the citation extract, in case the quote is too long.
+        raw_promise.exact_quote = raw_promise.exact_quote[:settings.CITATION_EXTRACT_LENGTH]
         logger.info(f"Extracted promise: {raw_promise.promise_text}")
         logger.info(f"Verbatim extraction honored: {raw_promise.exact_quote in extract}")
         logger.info(f"Article extract: {raw_promise.exact_quote}")
