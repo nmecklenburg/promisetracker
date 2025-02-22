@@ -36,8 +36,10 @@ class LLMPromiseResponse(BaseModel):
 
 
 class ActionInfo(BaseModel):
-    text: str
-    verbatim_quote: str
+    politician_name: str
+    is_action: bool
+    action_text: str
+    exact_quote: str
 
 
 class LLMActionResponse(BaseModel):
@@ -204,19 +206,24 @@ class ActionExtractor(EntityExtractor):
 
         formal_action_jsons = []
         for action_info in action_info_list:
-            if action_info.verbatim_quote not in extract:
-                logger.warning("Received action response without a corresponding verbatim quote, so will skip it.")
+            # Truncate the citation extract, in case the quote is too long.
+            action_info.exact_quote = action_info.exact_quote[:settings.CITATION_EXTRACT_LENGTH]
+            if not action_info.is_action or action_info.exact_quote not in extract:
+                logger.warning(
+                    "Received response that was either not an action or which did not adhere to our requirements. "
+                    f"is_action={action_info.is_action} is_quote={action_info.exact_quote in extract}"
+                )
                 continue
-            logger.info(f"Extracted action: {action_info.text}")
-            logger.info(f"Article extract: {action_info.verbatim_quote}")
+            logger.info(f"Extracted action: {action_info.action_text}")
+            logger.info(f"Article extract: {action_info.exact_quote}")
             formal_action_json = {
                 "date": datetime.now(),
-                "text": action_info.text,
-                "embedding": get_action_embedding(action_info.text),
+                "text": action_info.action_text,
+                "embedding": get_action_embedding(action_info.action_text),
                 "citations": [
                     {
                         "date": datetime.now(),
-                        "extract": action_info.verbatim_quote,
+                        "extract": action_info.exact_quote,
                         "url": url
                     }
                 ]

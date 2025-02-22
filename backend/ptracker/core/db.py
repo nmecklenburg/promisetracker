@@ -98,6 +98,7 @@ def init_db(session: Session) -> None:
                         embedding=get_action_embedding(atext))
         candidate = Candidate(name="Kamala Harris",
                               description="Candidate for 2024 US presidential election with Tim Walz as running mate.",
+                              profile_image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Kamala_Harris_Vice_Presidential_Portrait.jpg/1200px-Kamala_Harris_Vice_Presidential_Portrait.jpg",
                               promises=[promise],
                               actions=[action])
 
@@ -113,6 +114,7 @@ def init_db(session: Session) -> None:
         candidate2 = \
             Candidate(name="Joe Biden",
                       description="Candidate for 2020 US presidential election with Kamala Harris as running mate.",
+                      profile_image_url="https://bidenwhitehouse.archives.gov/wp-content/uploads/2025/01/biden-profile-31-1_w-1270.png",
                       promises=[promise2])
 
         session.add(candidate)

@@ -77,7 +77,10 @@ def read_candidate(session: SessionArg, candidate_id: int) -> Any:
 
 @router.post("/", response_model=CandidatePublic)
 def create_candidate(session: SessionArg, candidate_in: CandidateCreate) -> Any:
-    candidate = Candidate.model_validate(candidate_in)
+    maybe_stringified_profile_pic = None
+    if candidate_in.profile_image_url is not None:
+        maybe_stringified_profile_pic = str(candidate_in.profile_image_url)
+    candidate = Candidate.model_validate(candidate_in, update={"profile_image_url": maybe_stringified_profile_pic})
     session.add(candidate)
     session.commit()
     session.refresh(candidate)
@@ -94,6 +97,9 @@ def update_candidate(session: SessionArg, candidate_id: int, candidate_in: Candi
         raise HTTPException(status_code=404, detail=f"Candidate with id={candidate_id} not found.")
 
     update_dict = candidate_in.model_dump(exclude_unset=True)
+    if candidate_in.profile_image_url is not None:
+        update_dict["profile_image_url"] = str(candidate_in.profile_image_url)
+
     candidate.sqlmodel_update(update_dict)
     session.add(candidate)
     session.commit()
