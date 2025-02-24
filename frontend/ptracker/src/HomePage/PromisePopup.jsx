@@ -53,7 +53,7 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
             <ul style={styles.actionList}>
               {actions.length > 0 ? (
                 actions.map((action) => (
-                  <li key={action.id}>
+                  <li key={action.id} style={styles.actionItem}>
                     {formatDate(action.date)}: {action.text}
                   </li>
                 ))
@@ -192,6 +192,9 @@ const styles = {
     paddingLeft: "15px",
     fontSize: "14px",
     margin: 0,
+  },
+  actionItem: {
+    marginBottom: "8px"
   },
   articleContainer: {
     display: "flex",
