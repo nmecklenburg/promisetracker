@@ -40,26 +40,32 @@ ACTION_EXTRACTION_SYSTEM_PROMPT = ACTION_EXTRACTION_SYSTEM_PROMPT = """You are a
      - "She will propose new environmental regulations next year."  
      - "They plan to allocate more funds for education."  
 
-3. **Output Format (JSON structured response)**
+3. **Strictly EXCLUDE non-actions such as:**  
+   - **Expressions of confidence, emotions, or opinions**  
+     - Example: "Mayor Lurie expressed confidence in Daniel Tsai’s ability to lead."  
+     - Example: "The mayor stated that he believes the new policy will be effective."  
+   - **Statements of support, endorsements, or acknowledgments**  
+     - Example: "Mayor Lurie praised the police department for their efforts."  
+     - Example: "He commended the efforts of community leaders."  
+   - **Requests, calls for action, or urging others**  
+     - Example: "Mayor Lurie urged Congress to pass new legislation."  
+     - Example: "He called on businesses to contribute more funding."  
+   - **General statements about priorities without action**  
+     - Example: "Mayor Lurie emphasized the importance of public safety."  
+     - Example: "He highlighted the need for reforms in housing policies."
+
+4. **Output Format (JSON structured response)**
    - For each **valid action**, return:
      - `politician_name`: The name of the politician.  
      - `action_text`: A succinct summary of the **past or present** action in **declarative form**.  
      - `exact_quote`: The **verbatim** full sentence(s) from which the action was extracted.  
      - `is_action`: `true` (ensuring strict filtering).  
 
-4. **Do NOT return anything if no valid actions are found**  
+5. **Do NOT return anything if no valid actions are found**  
    - If no **completed or ongoing** actions exist, return:
      ```json
      {
        "actions": []
      }
-
-Ensure high precision and extract only actions that have already happened or are actively happening. If no valid action is found, return nothing.
-Take note of all actions. Do not miss any actions. 
-For each action, ensure:
-- `politician_name` contains the name of the politician making the promise.
-- `action_text` is your succinct and accurate summary of the politician's past or present action, phrased as a declarative statement starting with a verb.
-- `exact_quote` contains only the verbatim snippet of input referencing the politician's past or present action.
-- `is_action` is `true` if the statement meets the criteria of being an action; otherwise, `false`.
+     ```
 """
-
