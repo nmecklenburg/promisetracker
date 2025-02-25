@@ -7,16 +7,26 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
   if (!promise) return null;
 
   const [actions, setActions] = useState([]);
+  const [expandedActions, setExpandedActions] = useState({}); // Track expanded citations per action
+  const [citationsByAction, setCitationsByAction] = useState({}); // Store citations per action
+  const [citations, setCitations] = useState([]);
+  const [currentCitationIndex, setCurrentCitationIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get(
+        const actionsResponse = await api.get(
           `/api/v1/candidates/${candidateId}/promises/${promise.id}/actions`
         );
-        setActions(response.data.data);
+        const citationsResponse = await api.get(
+          `/api/v1/candidates/${candidateId}/promises/${promise.id}/citations`
+        );
+
+        setActions(actionsResponse.data.data);
+        setCitations(citationsResponse.data.data);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching actions:", error);
       }
     };
 
@@ -30,6 +40,40 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const nextCitation = () => {
+    setCurrentCitationIndex((prevIndex) => (prevIndex + 1) % citations.length);
+  };
+
+  const prevCitation = () => {
+    setCurrentCitationIndex((prevIndex) =>
+      prevIndex === 0 ? citations.length - 1 : prevIndex - 1
+    );
+  };
+
+  const toggleActionCitations = async (actionId) => {
+    setExpandedActions((prevState) => ({
+      ...prevState,
+      [actionId]: !prevState[actionId],
+    }));
+
+    if (!citationsByAction[actionId]) {
+      try {
+        const response = await api.get(
+          `/api/v1/candidates/${candidateId}/actions/${actionId}/citations/`
+        );
+        setCitationsByAction((prevCitations) => ({
+          ...prevCitations,
+          [actionId]: response.data.data,
+        }));
+      } catch (error) {
+        console.error(
+          `Error fetching citations for action ${actionId}:`,
+          error
+        );
+      }
+    }
   };
 
   return (
@@ -48,13 +92,42 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
 
         {/* Actions Taken (Scrollable) */}
         <div style={styles.section}>
-          <strong>Actions Taken:</strong>
+          <strong>Progress Updates:</strong>
           <div style={styles.actionContainer}>
             <ul style={styles.actionList}>
               {actions.length > 0 ? (
                 actions.map((action) => (
                   <li key={action.id} style={styles.actionItem}>
                     {formatDate(action.date)}: {action.text}
+                    <div
+                      style={styles.toggleButton}
+                      onClick={() => toggleActionCitations(action.id)}
+                    >
+                      {expandedActions[action.id]
+                        ? "Hide Sources"
+                        : "View Sources"}
+                    </div>
+                    {expandedActions[action.id] && (
+                      <ul style={styles.citationList}>
+                        {citationsByAction[action.id]?.length > 0 ? (
+                          citationsByAction[action.id].map((citation) => (
+                            <li key={citation.url} style={styles.citationItem}>
+                              <a
+                                href={citation.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {`"${citation.extract}"`}
+                              </a>
+                            </li>
+                          ))
+                        ) : (
+                          <li style={styles.noCitation}>
+                            No sources available
+                          </li>
+                        )}
+                      </ul>
+                    )}
                   </li>
                 ))
               ) : (
@@ -66,17 +139,47 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
 
         {/* Category */}
         <div style={styles.statusContainer}>
-        <span style={styles.statusLabel}>Categories:</span>
+          <span style={styles.statusLabel}>Categories:</span>
           <CategoryLabel category="Economy" />
         </div>
-
-        {/* Related Articles */}
-        <div style={styles.section}>
-          <strong>Related Articles:</strong>
-          <div style={styles.articleContainer}>
-            <div style={styles.articleCard}>{"Article Title"}</div>
+        {/* Related Articles (Swipeable) */}
+        {citations.length > 0 && (
+          <div style={styles.section}>
+            <strong>Related Articles:</strong>
+            <div style={styles.articleSwipeContainer}>
+              <button
+                style={styles.navButton}
+                onClick={prevCitation}
+                disabled={citations.length <= 1}
+              >
+                ◀
+              </button>
+              <div
+                style={{
+                  ...styles.articleCard,
+                }}
+              >
+                <a
+                  href={citations[currentCitationIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {`"${citations[currentCitationIndex].extract}"`}
+                </a>
+              </div>
+              <button
+                style={styles.navButton}
+                onClick={nextCitation}
+                disabled={citations.length <= 1}
+              >
+                ▶
+              </button>
+            </div>
+            <div style={styles.citationIndex}>
+              {`${currentCitationIndex + 1} / ${citations.length}`}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -92,7 +195,6 @@ const getStatusLabel = (status) => {
   };
   return statusMap[status] || "Unknown";
 };
-
 const styles = {
   overlay: {
     position: "fixed",
@@ -114,36 +216,6 @@ const styles = {
     width: "420px",
     maxWidth: "90%",
     border: "3px solid #99C3FF",
-    position: "relative",
-  },
-  Compromised: {
-    backgroundColor: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    width: "420px",
-    maxWidth: "90%",
-    border: "3px solid #FFF0A2",
-    position: "relative",
-  },
-  Delivered: {
-    backgroundColor: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    width: "420px",
-    maxWidth: "90%",
-    border: "3px solid #7ED957",
-    position: "relative",
-  },
-  Broken: {
-    backgroundColor: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    width: "420px",
-    maxWidth: "90%",
-    border: "3px solid #DF0404",
     position: "relative",
   },
   closeButton: {
@@ -171,17 +243,11 @@ const styles = {
   statusLabel: {
     fontWeight: "bold",
   },
-  statusBadge: {
-    padding: "6px 12px",
-    borderRadius: "8px",
-    backgroundColor: "#C8F7C5",
-    fontSize: "14px",
-  },
   section: {
     marginBottom: "15px",
   },
   actionContainer: {
-    maxHeight: "120px", // Show only first 5 actions (approximate height)
+    maxHeight: "120px",
     overflowY: "auto",
     border: "1px solid #ddd",
     borderRadius: "6px",
@@ -194,15 +260,17 @@ const styles = {
     margin: 0,
   },
   actionItem: {
-    marginBottom: "8px"
+    marginBottom: "8px",
   },
-  articleContainer: {
+  articleSwipeContainer: {
     display: "flex",
-    gap: "10px",
+    alignItems: "center",
     justifyContent: "center",
+    gap: "10px",
+    marginTop: "10px",
   },
   articleCard: {
-    width: "120px",
+    width: "250px",
     height: "80px",
     backgroundColor: "#ddd",
     display: "flex",
@@ -210,7 +278,48 @@ const styles = {
     justifyContent: "center",
     fontSize: "12px",
     borderRadius: "8px",
+    padding: "10px",
+    cursor: "pointer",
+    textAlign: "center",
+    transition: "color 0.3s ease",
+  },
+  navButton: {
+    background: "none",
+    border: "none",
+    fontSize: "20px",
+    cursor: "pointer",
+  },
+  citationIndex: {
+    justifyContent: "center",
+    textAlign: "center",
+    marginTop: "5px",
+  },
+  toggleButton: {
+    display: "block",
+    backgroundColor: "#f9f9f9",
+    border: "none",
+    borderRadius: "5px",
+    fontSize: "14px",
+    textDecoration: "underline",
+    marginTop: "2px",
+    fontWeight: "bold",
+  },
+  citationList: {
+    marginTop: "5px",
+    paddingLeft: "20px",
+    fontSize: "12px",
+  },
+  citationItem: {
+    marginBottom: "4px",
+  },
+  citationLink: {
+    color: "black",
+    textDecoration: "none",
+  },
+  noCitation: {
+    fontSize: "12px",
+    fontStyle: "italic",
+    color: "gray",
   },
 };
-
 export default PromisePopup;
