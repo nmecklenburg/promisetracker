@@ -19,6 +19,11 @@ const styles = {
     padding: "12px",
     textAlign: "left",
   },
+  tdLink: {
+    borderBottom: "1px solid #EEEEEE",
+    padding: "12px",
+    textDecoration: "underline"
+  },
   td: {
     borderBottom: "1px solid #EEEEEE",
     padding: "12px",
@@ -79,6 +84,7 @@ const PromisesTable = ({ candidate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const promisesPerPage = 10;
   const [selectedPromise, setSelectedPromise] = useState(null);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,7 +92,6 @@ const PromisesTable = ({ candidate }) => {
         const response = await api.get(
           `/api/v1/candidates/${candidate.id}/promises`
         );
-        console.log(response.data);
         setPromises(response.data.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -111,7 +116,8 @@ const PromisesTable = ({ candidate }) => {
     }
   };
 
-  const openPopup = (promise) => {
+  const openPopup = (promise, editMode) => {
+    setEditMode(editMode);
     setSelectedPromise(promise);
   };
 
@@ -134,7 +140,7 @@ const PromisesTable = ({ candidate }) => {
         <tbody>
           {currentPromises.map((promise) => (
             <tr key={promise.id}>
-              <td style={styles.td} onClick={() => openPopup(promise)}>
+              <td style={styles.tdLink} onClick={() => openPopup(promise)}>
                 {promise.text}
               </td>
               <td style={styles.td}>
@@ -143,12 +149,7 @@ const PromisesTable = ({ candidate }) => {
               </td>
               <td style={{ ...styles.td, ...styles.centeredText }}>
                 {promise.citations ? (
-                  <a
-                    href="#"
-                    style={{ color: "#3498db", textDecoration: "underline" }}
-                  >
-                    {promise.citations}
-                  </a>
+                    promise.citations
                 ) : (
                   "N/A"
                 )}
@@ -157,7 +158,7 @@ const PromisesTable = ({ candidate }) => {
                 <StatusLabel status={statusLabels[promise.status]} />
               </td>
               <td style={styles.td}>
-                <button style={styles.editButton}>
+                <button style={styles.editButton} onClick={() => openPopup(promise, true)}>
                   <FaPen />
                 </button>
               </td>
@@ -236,7 +237,7 @@ const PromisesTable = ({ candidate }) => {
           </div>
         </div>
       )}
-      <PromisePopup promise={selectedPromise} candidateId={candidate.id} onClose={closePopup} />
+      <PromisePopup promise={selectedPromise} candidateId={candidate.id} onClose={closePopup} editMode={editMode} />
     </div>
   );
 };

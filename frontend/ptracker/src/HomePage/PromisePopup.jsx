@@ -3,7 +3,7 @@ import CategoryLabel from "./CategoryLabel";
 import api from "../api";
 import StatusLabel from "./StatusLabel";
 
-const PromisePopup = ({ promise, candidateId, onClose }) => {
+const PromisePopup = ({ promise, candidateId, onClose, editMode }) => {
   if (!promise) return null;
 
   const [actions, setActions] = useState([]);
@@ -11,7 +11,26 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
   const [citationsByAction, setCitationsByAction] = useState({}); // Store citations per action
   const [citations, setCitations] = useState([]);
   const [currentCitationIndex, setCurrentCitationIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(promise.status);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const statusMap = {
+    0: "Progressing",
+    1: "Compromised",
+    2: "Delivered",
+    3: "Broken",
+  };
+
+  const handleSave = async () => {
+    if (editMode) {
+      try {
+        console.log("Status saved successfully:", selectedStatus);
+        onClose(); // Close the popup after saving
+      } catch (error) {
+        console.error("Error saving status:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +59,11 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  // Helper function to map status values to labels
+  const getStatusLabel = (status) => {
+    return statusMap[status] || "Unknown";
   };
 
   const nextCitation = () => {
@@ -82,12 +106,46 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
         <button style={styles.closeButton} onClick={onClose}>
           &times;
         </button>
+        {editMode && (
+          <div style={styles.editModeBanner}>You are editing this promise.</div>
+        )}
+
         <h2 style={styles.title}>{promise.text}</h2>
 
         {/* Status Section */}
         <div style={styles.statusContainer}>
           <span style={styles.statusLabel}>Status:</span>
-          <StatusLabel status={getStatusLabel(promise.status)} />
+          {editMode ? (
+            <div style={styles.dropdownContainer}>
+              <div
+                style={{
+                  ...statusStyles[getStatusLabel(selectedStatus)],
+                  ...styles.dropdownButton,
+                }}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                {`${getStatusLabel(selectedStatus)} ▼`}
+              </div>
+              {dropdownOpen && (
+                <div style={styles.dropdownMenu}>
+                  {Object.entries(statusMap).map(([key, label]) => (
+                    <div
+                      key={key}
+                      style={{ ...statusStyles[label], ...styles.dropdownItem }}
+                      onClick={() => {
+                        setSelectedStatus(Number(key));
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <StatusLabel status={getStatusLabel(selectedStatus)} />
+          )}
         </div>
 
         {/* Actions Taken (Scrollable) */}
@@ -180,21 +238,47 @@ const PromisePopup = ({ promise, candidateId, onClose }) => {
             </div>
           </div>
         )}
+        {editMode && (
+        <button style={styles.saveButton} onClick={handleSave}>
+          Save
+        </button>
+      )}
       </div>
     </div>
   );
 };
 
-// Helper function to map status values to labels
-const getStatusLabel = (status) => {
-  const statusMap = {
-    0: "Progressing",
-    1: "Compromised",
-    2: "Delivered",
-    3: "Broken",
-  };
-  return statusMap[status] || "Unknown";
+const statusStyles = {
+  Progressing: {
+    padding: "6px 12px",
+    color: "black",
+    borderRadius: "6px",
+    backgroundColor: "#99C3FF",
+    border: "1px solid #355581",
+  },
+  Compromised: {
+    padding: "6px 12px",
+    color: "black",
+    borderRadius: "6px",
+    backgroundColor: "#FFF0A2",
+    border: "1px solid #AB9629",
+  },
+  Delivered: {
+    padding: "6px 12px",
+    color: "black",
+    borderRadius: "6px",
+    backgroundColor: "#B7FFB5",
+    border: "1px solid #59E000",
+  },
+  Broken: {
+    padding: "6px 12px",
+    color: "black",
+    borderRadius: "6px",
+    backgroundColor: "#FF9C9C",
+    border: "1px solid #DF0404",
+  },
 };
+
 const styles = {
   overlay: {
     position: "fixed",
@@ -232,7 +316,6 @@ const styles = {
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: "15px",
-    textDecoration: "underline",
   },
   statusContainer: {
     display: "flex",
@@ -320,6 +403,55 @@ const styles = {
     fontSize: "12px",
     fontStyle: "italic",
     color: "gray",
+  },
+  editModeBanner: {
+    backgroundColor: "#ffeb3b",
+    color: "#000",
+    textAlign: "center",
+    padding: "8px",
+    fontWeight: "bold",
+    borderRadius: "5px",
+    marginBottom: "10px",
+  },
+  dropdownContainer: {
+    position: "relative",
+    display: "inline-block",
+    cursor: "pointer",
+  },
+  dropdownButton: {
+    display: "inline-block",
+    padding: "6px 12px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    backgroundColor: "#fff",
+    borderRadius: "6px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    minWidth: "150px",
+    zIndex: 1000,
+  },
+  dropdownItem: {
+    padding: "6px 12px",
+    cursor: "pointer",
+    borderBottom: "1px solid #ddd",
+    textAlign: "center",
+  },
+  saveButton: {
+    width: "100%",
+    padding: "10px",
+    fontSize: "16px",
+    fontWeight: "bold",
+    color: "#fff",
+    backgroundColor: "#b51d1d",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    marginTop: "15px",
+    transition: "background-color 0.3s",
   },
 };
 export default PromisePopup;

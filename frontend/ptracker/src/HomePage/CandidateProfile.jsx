@@ -9,7 +9,7 @@ const CandidateProfile = ({ candidate }) => {
         {/* Circular Image */}
         <div style={styles.imageContainer}>
           <img
-            src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Daniel_Lurie_Headshot.jpg"
+            src={candidate.profile_image_url}
             alt="Daniel Lurie"
             style={styles.profileImage}
           />
