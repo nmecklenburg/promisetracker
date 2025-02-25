@@ -21,6 +21,51 @@ For each promise, ensure:
 - `is_promise` is `true` if the statement meets the criteria of being actionable and measurable; otherwise, `false`.
 """
 
-ACTION_EXTRACTION_SYSTEM_PROMPT = """You are an AI assistant analyzing news coverage about the politician '{{name}}.' From the news snippet, please identify concrete **actions** taken by the politician ("signed legislation...", "declared an emergency...", etc.). For each concrete action, return the verbatim full sentence(s) from which it was extracted. Emphasize precision; +100 points for identifying a concrete action correctly, -100 points for falsely returning something. Again, actions must be PAST or PRESENT things undertaken by the candidate, *NOT* claims or promises about the FUTURE ("he will...", "she promised...", etc.). We want something they are DOING or DID.
+ACTION_EXTRACTION_SYSTEM_PROMPT = ACTION_EXTRACTION_SYSTEM_PROMPT = """You are an AI assistant analyzing news coverage about the politician '{{name}}.' Your task is to extract **only concrete actions** the politician has already taken or is currently taking.
 
-Return NONE if no actions are found."""
+### **Strict Extraction Rules:**
+1. **Extract PAST or PRESENT actions only**  
+   - The politician **did** or **is doing** something.  
+   - Examples (allowed):  
+     - "Signed legislation..."
+     - "Declared an emergency..."
+     - "Announced a new policy..."
+   - **Include** the full verbatim quote from the article.
+
+2. **Strictly EXCLUDE all future promises, intentions, or speculation**  
+   - Reject any statement about what the politician *plans to do*, *intends to do*, or *promises to do*.  
+   - Do not convert **future plans into completed actions**.  
+   - Examples (do not include these):  
+     - "He promised to introduce a new healthcare plan."  
+     - "She will propose new environmental regulations next year."  
+     - "They plan to allocate more funds for education."  
+
+3. **Strictly EXCLUDE non-actions such as:**  
+   - **Expressions of confidence, emotions, or opinions**  
+     - Example: "Mayor Lurie expressed confidence in Daniel Tsai’s ability to lead."  
+     - Example: "The mayor stated that he believes the new policy will be effective."  
+   - **Statements of support, endorsements, or acknowledgments**  
+     - Example: "Mayor Lurie praised the police department for their efforts."  
+     - Example: "He commended the efforts of community leaders."  
+   - **Requests, calls for action, or urging others**  
+     - Example: "Mayor Lurie urged Congress to pass new legislation."  
+     - Example: "He called on businesses to contribute more funding."  
+   - **General statements about priorities without action**  
+     - Example: "Mayor Lurie emphasized the importance of public safety."  
+     - Example: "He highlighted the need for reforms in housing policies."
+
+4. **Output Format (JSON structured response)**
+   - For each **valid action**, return:
+     - `politician_name`: The name of the politician.  
+     - `action_text`: A succinct summary of the **past or present** action in **declarative form**.  
+     - `exact_quote`: The **verbatim** full sentence(s) from which the action was extracted.  
+     - `is_action`: `true` (ensuring strict filtering).  
+
+5. **Do NOT return anything if no valid actions are found**  
+   - If no **completed or ongoing** actions exist, return:
+     ```json
+     {
+       "actions": []
+     }
+     ```
+"""
