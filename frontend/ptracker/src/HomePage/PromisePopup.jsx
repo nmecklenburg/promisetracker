@@ -66,10 +66,11 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
     if (!newCitationUrl.trim()) return;
 
     try {
+      const currentDate = new Date().toISOString();
       const response = await api.post(
         `/api/v1/candidates/${candidateId}/promises/${promise.id}/citations`,
         {
-          date: "2025-03-04T08:01:16.230Z",
+          date: currentDate,
           url: newCitationUrl,
           extract: newCitationExtract
         }
