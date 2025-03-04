@@ -49,13 +49,13 @@ const PromiseCard = ({ candidateId }) => {
               counts.progressing++;
               break;
             case 1:
-              counts.completed++;
+              counts.compromised++;
               break;
             case 2:
-              counts.broken++;
+              counts.completed++;
               break;
             case 3:
-              counts.compromised++;
+              counts.broken++;
               break;
             default:
               break;

@@ -3,34 +3,19 @@ import CategoryLabel from "./CategoryLabel";
 import api from "../api";
 import StatusLabel from "./StatusLabel";
 
-const PromisePopup = ({ promise, candidateId, onClose, editMode }) => {
+const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseStatus }) => {
   if (!promise) return null;
 
   const [actions, setActions] = useState([]);
-  const [expandedActions, setExpandedActions] = useState({}); // Track expanded citations per action
-  const [citationsByAction, setCitationsByAction] = useState({}); // Store citations per action
+  const [expandedActions, setExpandedActions] = useState({});
+  const [citationsByAction, setCitationsByAction] = useState({});
   const [citations, setCitations] = useState([]);
   const [currentCitationIndex, setCurrentCitationIndex] = useState(0);
   const [selectedStatus, setSelectedStatus] = useState(promise.status);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const statusMap = {
-    0: "Progressing",
-    1: "Compromised",
-    2: "Delivered",
-    3: "Broken",
-  };
-
-  const handleSave = async () => {
-    if (editMode) {
-      try {
-        console.log("Status saved successfully:", selectedStatus);
-        onClose(); // Close the popup after saving
-      } catch (error) {
-        console.error("Error saving status:", error);
-      }
-    }
-  };
+  const [newCitationUrl, setNewCitationUrl] = useState("");
+  const [newCitationExtract, setNewCitationExtract] = useState("");
+  const [isAddingCitation, setIsAddingCitation] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,37 +30,61 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode }) => {
         setActions(actionsResponse.data.data);
         setCitations(citationsResponse.data.data);
       } catch (error) {
-        console.error("Error fetching actions:", error);
+        console.error("Error fetching data:", error);
       }
     };
 
     fetchData();
   }, [candidateId, promise.id]);
 
-  const formatDate = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+  const statusMap = {
+    0: "Progressing",
+    1: "Compromised",
+    2: "Delivered",
+    3: "Broken",
   };
 
-  // Helper function to map status values to labels
-  const getStatusLabel = (status) => {
-    return statusMap[status] || "Unknown";
+  // Save status change
+  const handleSave = async () => {
+    if (editMode) {
+      try {
+        const response = await api.patch(`/api/v1/candidates/${candidateId}/promises/${promise.id}`, {
+          status: selectedStatus
+        });
+
+        console.log("Status updated:", response.data);
+        updatePromiseStatus(promise.id, selectedStatus);
+        onClose();
+      } catch (error) {
+        console.error("Error saving status:", error);
+      }
+    }
   };
 
-  const nextCitation = () => {
-    setCurrentCitationIndex((prevIndex) => (prevIndex + 1) % citations.length);
+  // Add new citation
+  const handleAddCitation = async () => {
+    if (!newCitationUrl.trim()) return;
+
+    try {
+      const response = await api.post(
+        `/api/v1/candidates/${candidateId}/promises/${promise.id}/citations`,
+        {
+          date: "2025-03-04T08:01:16.230Z",
+          url: newCitationUrl,
+          extract: newCitationExtract
+        }
+      );
+
+      setCitations([...citations, response.data]); // Add new citation to UI
+      setNewCitationUrl("");
+      setNewCitationExtract("");
+      setIsAddingCitation(false);
+    } catch (error) {
+      console.error("Error adding citation:", error);
+    }
   };
 
-  const prevCitation = () => {
-    setCurrentCitationIndex((prevIndex) =>
-      prevIndex === 0 ? citations.length - 1 : prevIndex - 1
-    );
-  };
-
+  // Fetch citations for a specific action
   const toggleActionCitations = async (actionId) => {
     setExpandedActions((prevState) => ({
       ...prevState,
@@ -92,23 +101,30 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode }) => {
           [actionId]: response.data.data,
         }));
       } catch (error) {
-        console.error(
-          `Error fetching citations for action ${actionId}:`,
-          error
-        );
+        console.error(`Error fetching citations for action ${actionId}:`, error);
       }
     }
   };
 
+  const nextCitation = () => {
+    setCurrentCitationIndex((prevIndex) => (prevIndex + 1) % citations.length);
+  };
+
+  const prevCitation = () => {
+    setCurrentCitationIndex((prevIndex) =>
+      prevIndex === 0 ? citations.length - 1 : prevIndex - 1
+    );
+  };
+
+  const getStatusLabel = (status) => {
+    return statusMap[status] || "Unknown";
+  };
+
   return (
     <div style={styles.overlay}>
-      <div style={styles[getStatusLabel(promise.status)]}>
-        <button style={styles.closeButton} onClick={onClose}>
-          &times;
-        </button>
-        {editMode && (
-          <div style={styles.editModeBanner}>You are editing this promise.</div>
-        )}
+      <div style={styles[getStatusLabel(selectedStatus)]}>
+        <button style={styles.closeButton} onClick={onClose}>&times;</button>
+        {editMode && <div style={styles.editModeBanner}>You are editing this promise.</div>}
 
         <h2 style={styles.title}>{promise.text}</h2>
 
@@ -124,7 +140,7 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode }) => {
                 }}
                 onClick={() => setDropdownOpen(!dropdownOpen)}
               >
-                {`${getStatusLabel(selectedStatus)} ▼`}
+                {`${statusMap[selectedStatus]} ▼`}
               </div>
               {dropdownOpen && (
                 <div style={styles.dropdownMenu}>
@@ -144,105 +160,78 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode }) => {
               )}
             </div>
           ) : (
-            <StatusLabel status={getStatusLabel(selectedStatus)} />
+            <StatusLabel status={statusMap[selectedStatus]} />
           )}
         </div>
 
-        {/* Actions Taken (Scrollable) */}
+        {/* Actions and Citations */}
         <div style={styles.section}>
           <strong>Progress Updates:</strong>
           <div style={styles.actionContainer}>
             <ul style={styles.actionList}>
-              {actions.length > 0 ? (
-                actions.map((action) => (
-                  <li key={action.id} style={styles.actionItem}>
-                    {formatDate(action.date)}: {action.text}
-                    <div
-                      style={styles.toggleButton}
-                      onClick={() => toggleActionCitations(action.id)}
-                    >
-                      {expandedActions[action.id]
-                        ? "Hide Sources"
-                        : "View Sources"}
-                    </div>
-                    {expandedActions[action.id] && (
-                      <ul style={styles.citationList}>
-                        {citationsByAction[action.id]?.length > 0 ? (
-                          citationsByAction[action.id].map((citation) => (
-                            <li key={citation.url} style={styles.citationItem}>
-                              <a
-                                href={citation.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {`"${citation.extract}"`}
-                              </a>
-                            </li>
-                          ))
-                        ) : (
-                          <li style={styles.noCitation}>
-                            No sources available
+              {actions.map((action) => (
+                <li key={action.id} style={styles.actionItem}>
+                  {action.text}
+                  <div
+                    style={styles.toggleButton}
+                    onClick={() => toggleActionCitations(action.id)}
+                  >
+                    {expandedActions[action.id] ? "Hide Sources" : "View Sources"}
+                  </div>
+                  {expandedActions[action.id] && (
+                    <ul style={styles.citationList}>
+                      {citationsByAction[action.id]?.length > 0 ? (
+                        citationsByAction[action.id].map((citation) => (
+                          <li key={citation.url} style={styles.citationItem}>
+                            <a href={citation.url} target="_blank" rel="noopener noreferrer">
+                              {`"${citation.extract}"`}
+                            </a>
                           </li>
-                        )}
-                      </ul>
-                    )}
-                  </li>
-                ))
-              ) : (
-                <li>No recorded actions</li>
-              )}
+                        ))
+                      ) : (
+                        <li style={styles.noCitation}>No sources available</li>
+                      )}
+                    </ul>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        {/* Category */}
-        <div style={styles.statusContainer}>
-          <span style={styles.statusLabel}>Categories:</span>
-          <CategoryLabel category="Economy" />
-        </div>
-        {/* Related Articles (Swipeable) */}
-        {citations.length > 0 && (
-          <div style={styles.section}>
-            <strong>Related Articles:</strong>
+        {/* Related Articles Section */}
+        <div style={styles.section}>
+          <strong>Related Articles:</strong>
+
+          {citations.length > 0 && (
             <div style={styles.articleSwipeContainer}>
-              <button
-                style={styles.navButton}
-                onClick={prevCitation}
-                disabled={citations.length <= 1}
-              >
-                ◀
-              </button>
-              <div
-                style={{
-                  ...styles.articleCard,
-                }}
-              >
-                <a
-                  href={citations[currentCitationIndex].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+              <button style={styles.navButton} onClick={prevCitation} disabled={citations.length <= 1}>◀</button>
+              <div style={styles.articleCard}>
+                <a href={citations[currentCitationIndex].url} target="_blank" rel="noopener noreferrer">
                   {`"${citations[currentCitationIndex].extract}"`}
                 </a>
               </div>
-              <button
-                style={styles.navButton}
-                onClick={nextCitation}
-                disabled={citations.length <= 1}
-              >
-                ▶
-              </button>
+              <button style={styles.navButton} onClick={nextCitation} disabled={citations.length <= 1}>▶</button>
             </div>
-            <div style={styles.citationIndex}>
-              {`${currentCitationIndex + 1} / ${citations.length}`}
+          )}
+          <div style={styles.citationIndex}>{`${currentCitationIndex + 1} / ${citations.length}`}</div>
+
+          {editMode && (
+            <div style={styles.addCitationContainer}>
+              {isAddingCitation ? (
+                <>
+                  <input type="text" placeholder="Citation URL" value={newCitationUrl} onChange={(e) => setNewCitationUrl(e.target.value)} style={styles.inputField} />
+                  <input type="text" placeholder="Quote (Optional)" value={newCitationExtract} onChange={(e) => setNewCitationExtract(e.target.value)} style={styles.inputField} />
+                  <button style={styles.addButton} onClick={handleAddCitation}>Add Citation</button>
+                </>
+              ) : (
+                <button style={styles.addCitationButton} onClick={() => setIsAddingCitation(true)}>+ Add Citation</button>
+              )}
             </div>
-          </div>
-        )}
-        {editMode && (
-        <button style={styles.saveButton} onClick={handleSave}>
-          Save
-        </button>
-      )}
+          )}
+        </div>
+
+        {editMode && <button style={styles.saveButton} onClick={handleSave}>Save</button>}
       </div>
     </div>
   );
@@ -300,6 +289,36 @@ const styles = {
     width: "420px",
     maxWidth: "90%",
     border: "3px solid #99C3FF",
+    position: "relative",
+  },
+  Compromised: {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    width: "420px",
+    maxWidth: "90%",
+    border: "3px solid #AB9629",
+    position: "relative",
+  },
+  Delivered: {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    width: "420px",
+    maxWidth: "90%",
+    border: "3px solid #59E000",
+    position: "relative",
+  },
+  Broken: {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    width: "420px",
+    maxWidth: "90%",
+    border: "3px solid #DF0404",
     position: "relative",
   },
   closeButton: {
@@ -452,6 +471,49 @@ const styles = {
     cursor: "pointer",
     marginTop: "15px",
     transition: "background-color 0.3s",
+  },
+  addCitationContainer: {
+    marginTop: "10px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  inputField: {
+    width: "100%",
+    padding: "8px",
+    margin: "5px 0",
+    borderRadius: "5px",
+    border: "1px solid #ccc",
+    fontSize: "14px",
+  },
+  buttonGroup: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "10px",
+  },
+  addButton: {
+    padding: "6px 12px",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+  },
+  cancelButton: {
+    padding: "6px 12px",
+    backgroundColor: "#ccc",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+  },
+  addCitationButton: {
+    marginTop: "10px",
+    padding: "8px",
+    backgroundColor: "#007BFF",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
   },
 };
 export default PromisePopup;

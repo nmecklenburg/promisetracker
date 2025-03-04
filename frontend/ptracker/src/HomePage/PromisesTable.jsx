@@ -22,7 +22,7 @@ const styles = {
   tdLink: {
     borderBottom: "1px solid #EEEEEE",
     padding: "12px",
-    textDecoration: "underline"
+    textDecoration: "underline",
   },
   td: {
     borderBottom: "1px solid #EEEEEE",
@@ -92,7 +92,17 @@ const PromisesTable = ({ candidate }) => {
         const response = await api.get(
           `/api/v1/candidates/${candidate.id}/promises`
         );
-        setPromises(response.data.data);
+
+        // Sort the promises by citations (descending)
+        // If citations are equal, sort by text length (ascending)
+        const sortedPromises = response.data.data.sort((a, b) => {
+          if (b.citations !== a.citations) {
+            return b.citations - a.citations; // Sort by most citations first
+          }
+          return a.text.length - b.text.length; // If citations are equal, sort by shortest text
+        });
+
+        setPromises(sortedPromises);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -114,6 +124,14 @@ const PromisesTable = ({ candidate }) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
+  };
+
+  const updatePromiseStatus = (promiseId, newStatus) => {
+    setPromises((prevPromises) =>
+      prevPromises.map((p) =>
+        p.id === promiseId ? { ...p, status: newStatus } : p
+      )
+    );
   };
 
   const openPopup = (promise, editMode) => {
@@ -148,17 +166,16 @@ const PromisesTable = ({ candidate }) => {
                 <CategoryLabel key="Health" category="Health" />
               </td>
               <td style={{ ...styles.td, ...styles.centeredText }}>
-                {promise.citations ? (
-                    promise.citations
-                ) : (
-                  "N/A"
-                )}
+                {promise.citations ? promise.citations : "N/A"}
               </td>
               <td style={styles.td}>
                 <StatusLabel status={statusLabels[promise.status]} />
               </td>
               <td style={styles.td}>
-                <button style={styles.editButton} onClick={() => openPopup(promise, true)}>
+                <button
+                  style={styles.editButton}
+                  onClick={() => openPopup(promise, true)}
+                >
                   <FaPen />
                 </button>
               </td>
@@ -237,7 +254,13 @@ const PromisesTable = ({ candidate }) => {
           </div>
         </div>
       )}
-      <PromisePopup promise={selectedPromise} candidateId={candidate.id} onClose={closePopup} editMode={editMode} />
+      <PromisePopup
+        promise={selectedPromise}
+        candidateId={candidate.id}
+        onClose={closePopup}
+        editMode={editMode}
+        updatePromiseStatus={updatePromiseStatus}
+      />
     </div>
   );
 };
