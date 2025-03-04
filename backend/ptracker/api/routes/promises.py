@@ -92,9 +92,7 @@ def create_promise(session: SessionArg, candidate_id: int, promise_in: PromiseCr
 
     actions = []
     if promise_in.actions:
-        action_query = (select(Action)
-                        .join(PromiseActionLink)
-                        .where(col(PromiseActionLink.action_id).in_(promise_in.actions)))
+        action_query = (select(Action).where(col(Action.id).in_(promise_in.actions)))
         actions = session.exec(action_query).all()
 
         num_requested_actions = len(promise_in.actions)
