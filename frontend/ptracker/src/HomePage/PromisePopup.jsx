@@ -16,8 +16,11 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
   const [newCitationUrl, setNewCitationUrl] = useState("");
   const [newCitationExtract, setNewCitationExtract] = useState("");
   const [isAddingCitation, setIsAddingCitation] = useState(false);
+  const [newActionText, setNewActionText] = useState("");
+  const [isAddingAction, setIsAddingAction] = useState(false);
 
   useEffect(() => {
+    console.log(promise.id)
     const fetchData = async () => {
       try {
         const actionsResponse = await api.get(
@@ -45,19 +48,56 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
   };
 
   // Save status change
-  const handleSave = async () => {
+  const handleSaveStatus = async (status) => {
     if (editMode) {
       try {
         const response = await api.patch(`/api/v1/candidates/${candidateId}/promises/${promise.id}`, {
-          status: selectedStatus
+          status: status
         });
 
         console.log("Status updated:", response.data);
-        updatePromiseStatus(promise.id, selectedStatus);
-        onClose();
+        updatePromiseStatus(promise.id, status);
       } catch (error) {
         console.error("Error saving status:", error);
       }
+    }
+  };
+
+  const handleAddAction = async () => {
+    if (!newActionText.trim() || !newCitationUrl.trim() || !newCitationExtract.trim()) {
+      alert("Please enter an action description and a valid citation.");
+      return;
+    }
+
+    try {
+      const currentDate = new Date().toISOString();
+
+      // Create the new action with the citation
+      const response = await api.post(
+        `/api/v1/candidates/${candidateId}/actions/`,
+        {
+          date: currentDate,
+          text: newActionText,
+          citations: [
+            {
+              date: currentDate,
+              extract: newCitationExtract,
+              url: newCitationUrl
+            }
+          ],
+          promises: [promise.id]
+        }
+      );
+      console.log(response.data)
+      console.log("created action: ", currentDate, newActionText, promise.id)
+
+      setActions([...actions, response.data]); // Update UI with new action
+      setNewActionText("");
+      setNewCitationUrl("");
+      setNewCitationExtract("");
+      setIsAddingAction(false);
+    } catch (error) {
+      console.error("Error adding action:", error);
     }
   };
 
@@ -75,8 +115,9 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
           extract: newCitationExtract
         }
       );
+      console.log("action created: ", response.data);
 
-      setCitations([...citations, response.data]); // Add new citation to UI
+      setCitations([...citations, response.data]);
       setNewCitationUrl("");
       setNewCitationExtract("");
       setIsAddingCitation(false);
@@ -125,7 +166,7 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
     <div style={styles.overlay}>
       <div style={styles[getStatusLabel(selectedStatus)]}>
         <button style={styles.closeButton} onClick={onClose}>&times;</button>
-        {editMode && <div style={styles.editModeBanner}>You are editing this promise.</div>}
+        {editMode && <div style={styles.editModeBanner}>You are editing this promise. Changes are saved automatically.</div>}
 
         <h2 style={styles.title}>{promise.text}</h2>
 
@@ -151,6 +192,7 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
                       style={{ ...statusStyles[label], ...styles.dropdownItem }}
                       onClick={() => {
                         setSelectedStatus(Number(key));
+                        handleSaveStatus(Number(key));
                         setDropdownOpen(false);
                       }}
                     >
@@ -198,6 +240,41 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
               ))}
             </ul>
           </div>
+
+          {editMode && (
+            <div style={styles.addActionContainer}>
+              {isAddingAction ? (
+                <>
+                  <input
+                    placeholder="Describe the new action..."
+                    value={newActionText}
+                    onChange={(e) => setNewActionText(e.target.value)}
+                    style={styles.inputField}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Citation URL"
+                    value={newCitationUrl}
+                    onChange={(e) => setNewCitationUrl(e.target.value)}
+                    style={styles.inputField}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Quote from the source"
+                    value={newCitationExtract}
+                    onChange={(e) => setNewCitationExtract(e.target.value)}
+                    style={styles.inputField}
+                  />
+                  <div style={styles.buttonGroup}>
+                    <button style={styles.addButton} onClick={handleAddAction}>Add Action</button>
+                    <button style={styles.cancelButton} onClick={() => setIsAddingAction(false)}>Cancel</button>
+                  </div>
+                </>
+              ) : (
+                <button style={styles.addActionButton} onClick={() => setIsAddingAction(true)}>+ Add Action</button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Related Articles Section */}
@@ -223,16 +300,17 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
                 <>
                   <input type="text" placeholder="Citation URL" value={newCitationUrl} onChange={(e) => setNewCitationUrl(e.target.value)} style={styles.inputField} />
                   <input type="text" placeholder="Quote (Optional)" value={newCitationExtract} onChange={(e) => setNewCitationExtract(e.target.value)} style={styles.inputField} />
+                  <div style={styles.buttonGroup}>
                   <button style={styles.addButton} onClick={handleAddCitation}>Add Citation</button>
+                    <button style={styles.cancelButton} onClick={() => setIsAddingCitation(false)}>Cancel</button>
+                  </div>
                 </>
               ) : (
-                <button style={styles.addCitationButton} onClick={() => setIsAddingCitation(true)}>+ Add Citation</button>
+                    <button style={styles.addCitationButton} onClick={() => setIsAddingCitation(true)}>+ Add Related Article</button>
               )}
             </div>
           )}
         </div>
-
-        {editMode && <button style={styles.saveButton} onClick={handleSave}>Save</button>}
       </div>
     </div>
   );
@@ -284,7 +362,7 @@ const styles = {
   },
   Progressing: {
     backgroundColor: "#fff",
-    padding: "20px",
+    padding: "12px",
     borderRadius: "12px",
     boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
     width: "420px",
@@ -294,7 +372,7 @@ const styles = {
   },
   Compromised: {
     backgroundColor: "#fff",
-    padding: "20px",
+    padding: "12px",
     borderRadius: "12px",
     boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
     width: "420px",
@@ -304,7 +382,7 @@ const styles = {
   },
   Delivered: {
     backgroundColor: "#fff",
-    padding: "20px",
+    padding: "12px",
     borderRadius: "12px",
     boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
     width: "420px",
@@ -314,7 +392,7 @@ const styles = {
   },
   Broken: {
     backgroundColor: "#fff",
-    padding: "20px",
+    padding: "12px",
     borderRadius: "12px",
     boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
     width: "420px",
@@ -374,7 +452,7 @@ const styles = {
   },
   articleCard: {
     width: "250px",
-    height: "80px",
+    height: "70px",
     backgroundColor: "#ddd",
     display: "flex",
     alignItems: "center",
@@ -474,18 +552,10 @@ const styles = {
     transition: "background-color 0.3s",
   },
   addCitationContainer: {
-    marginTop: "10px",
+    marginTop: "5px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-  },
-  inputField: {
-    width: "100%",
-    padding: "8px",
-    margin: "5px 0",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
   },
   buttonGroup: {
     display: "flex",
@@ -508,6 +578,29 @@ const styles = {
     cursor: "pointer",
   },
   addCitationButton: {
+    marginTop: "5px",
+    padding: "8px",
+    backgroundColor: "#007BFF",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+  },
+  addActionContainer: {
+    marginTop: "10px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  inputField: {
+    width: "100%",
+    padding: "5px",
+    margin: "5px 0",
+    borderRadius: "5px",
+    border: "1px solid #ccc",
+    fontSize: "14px",
+  },
+  addActionButton: {
     marginTop: "10px",
     padding: "8px",
     backgroundColor: "#007BFF",
