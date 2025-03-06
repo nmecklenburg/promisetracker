@@ -1,12 +1,12 @@
 import React from "react";
 import PromisesTable from "./PromisesTable";
 
-const PromisesList = ({ candidate }) => {
+const PromisesList = ({ candidate, isJournalist }) => {
 
   return (
     <div>
         <h1 style={styles.title}>Explore All Promises</h1>
-        <PromisesTable candidate={candidate} />
+        <PromisesTable candidate={candidate} isJournalist={isJournalist} />
     </div>
   );
 };

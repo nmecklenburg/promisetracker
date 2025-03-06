@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import PromiseCard from "../PromiseCard";
 
-const HomePage = () => {
+const HomePage = ({isJournalist}) => {
   const { candidateId } = useParams();
   const resolvedCandidateId = candidateId || "3";
 
@@ -33,7 +33,7 @@ const HomePage = () => {
     <>
       <CandidateProfile candidate={data} />
       <PromiseCard candidateId={resolvedCandidateId} />
-      <PromisesList candidate={data} />
+      <PromisesList candidate={data} isJournalist={isJournalist}/>
     </>
   );
 };

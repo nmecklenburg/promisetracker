@@ -75,7 +75,7 @@ const styles = {
 
 const statusLabels = ["Progressing", "Compromised", "Delivered", "Broken"];
 
-const PromisesTable = ({ candidate }) => {
+const PromisesTable = ({ candidate, isJournalist }) => {
   if (!candidate) {
     return <p>No candidates found</p>;
   }
@@ -172,12 +172,14 @@ const PromisesTable = ({ candidate }) => {
                 <StatusLabel status={statusLabels[promise.status]} />
               </td>
               <td style={styles.td}>
-                <button
-                  style={styles.editButton}
-                  onClick={() => openPopup(promise, true)}
-                >
-                  <FaPen />
-                </button>
+                {isJournalist && (
+                  <button
+                    style={styles.editButton}
+                    onClick={() => openPopup(promise, true)}
+                  >
+                    <FaPen />
+                  </button>
+                )}
               </td>
             </tr>
           ))}
