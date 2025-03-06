@@ -5,9 +5,10 @@ import StatusLabel from "./HomePage/StatusLabel";
 import CategoryLabel from "./HomePage/CategoryLabel";
 
 const PromiseCard = ({ candidateId }) => {
-  const [candidate, setCandidate] = useState(null); // Store candidate details
   const [promises, setPromises] = useState([]);
   const [error, setError] = useState(null);
+  const [citationsByPromise, setCitationsByPromise] = useState({});
+  const [currentCitationIndex, setCurrentCitationIndex] = useState({});
   const [promiseCounts, setPromiseCounts] = useState({
     progressing: 0,
     completed: 0,
@@ -18,12 +19,6 @@ const PromiseCard = ({ candidateId }) => {
   useEffect(() => {
     const fetchCandidateData = async () => {
       try {
-        // Fetch candidate details
-        const candidateResponse = await axios.get(
-          `http://localhost:8000/api/v1/candidates/${candidateId}`
-        );
-        setCandidate(candidateResponse.data);
-
         // Fetch all promises for the candidate
         const promisesResponse = await axios.get(
           `http://localhost:8000/api/v1/candidates/${candidateId}/promises`,
@@ -64,6 +59,25 @@ const PromiseCard = ({ candidateId }) => {
 
         setPromises(fetchedPromises);
         setPromiseCounts(counts);
+
+        const citationsPromises = fetchedPromises.map(async (promise) => {
+          const response = await axios.get(
+            `http://localhost:8000/api/v1/candidates/${candidateId}/promises/${promise.id}/citations`
+          );
+          return { promiseId: promise.id, citations: response.data.data };
+        });
+
+        const citationsData = await Promise.all(citationsPromises);
+        const citationsMap = {};
+        const citationIndices = {};
+
+        citationsData.forEach(({ promiseId, citations }) => {
+          citationsMap[promiseId] = citations;
+          citationIndices[promiseId] = 0;
+        });
+
+        setCitationsByPromise(citationsMap);
+        setCurrentCitationIndex(citationIndices);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to fetch data");
@@ -72,6 +86,24 @@ const PromiseCard = ({ candidateId }) => {
 
     fetchCandidateData();
   }, [candidateId]); // Fetch data whenever candidateId changes
+
+  const handleNextCitation = (promiseId) => {
+    setCurrentCitationIndex((prev) => ({
+      ...prev,
+      [promiseId]:
+        (prev[promiseId] + 1) % (citationsByPromise[promiseId]?.length || 1),
+    }));
+  };
+
+  const handlePrevCitation = (promiseId) => {
+    setCurrentCitationIndex((prev) => ({
+      ...prev,
+      [promiseId]:
+        prev[promiseId] === 0
+          ? (citationsByPromise[promiseId]?.length || 1) - 1
+          : prev[promiseId] - 1,
+    }));
+  };
 
   // Calculate progress percentage
   const totalPromises =
@@ -141,11 +173,13 @@ const PromiseCard = ({ candidateId }) => {
       </div>
 
       <h1>Top Promises to Watch</h1>
-      {/* List of Promises - Display only the first 4 */}
       {promises.slice(0, 4).map((promise) => {
         const { text: statusText, color: statusColor } = getStatusDetails(
           promise.status
         );
+        const citations = citationsByPromise[promise.id] || [];
+        const currentCitation =
+          citations[currentCitationIndex[promise.id]] || {};
 
         return (
           <div
@@ -158,19 +192,27 @@ const PromiseCard = ({ candidateId }) => {
               <strong>Status:</strong> <StatusLabel status={statusText} />
             </div>
             <div className="category">
-              <strong>Category:</strong>{" "}
-              <CategoryLabel key={"Economy"} category={"Economy"} />
+              <strong>Category:</strong> <CategoryLabel category={"Economy"} />
             </div>
-            <div className="related-articles">
-              <strong>Related Articles:</strong>
-              <div className="articles">
-                {/* Placeholder for related articles */}
-                <div className="article">
-                  <div className="article-thumbnail"></div>
-                  <p>"Article Title"</p>
+
+            {/* Related Articles with Navigation */}
+            {citations.length > 0 && (
+              <div style={styles.relatedArticlesSection}>
+                <strong>Related Articles:</strong>
+                <div style={styles.articleSwipeContainer}>
+                  <button style={styles.navButton} onClick={() => handlePrevCitation(promise.id)}>◀</button>
+                  <div style={styles.articleCard}>
+                    <a href={currentCitation.url} target="_blank" rel="noopener noreferrer">
+                      {`"${currentCitation.extract}"` || "Read more"}
+                    </a>
+                  </div>
+                  <button style={styles.navButton} onClick={() => handleNextCitation(promise.id)}>▶</button>
+                </div>
+                <div style={styles.citationIndex}>
+                  {`${currentCitationIndex[promise.id] + 1} / ${citations.length}`}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         );
       })}
@@ -180,17 +222,54 @@ const PromiseCard = ({ candidateId }) => {
   function getStatusDetails(status) {
     switch (status) {
       case 0:
-        return { text: "Progressing", color: "blue" };
+        return { text: "Progressing", color: "#99C3FF" };
       case 1:
-        return { text: "Complete", color: "green" };
+        return { text: "Delivered", color: "#59E000" };
       case 2:
-        return { text: "Broken", color: "red" };
+        return { text: "Broken", color: "#DF0404" };
       case 3:
-        return { text: "Compromised", color: "yellow" };
+        return { text: "Compromised", color: "#AB9629" };
       default:
         return { text: "Unknown", color: "gray" };
     }
   }
+};
+
+const styles = {
+  relatedArticlesSection: {
+    marginTop: "10px",
+  },
+  articleSwipeContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
+    marginTop: "10px",
+  },
+  articleCard: {
+    width: "250px",
+    height: "70px",
+    backgroundColor: "#ddd",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px",
+    borderRadius: "8px",
+    padding: "10px",
+    cursor: "pointer",
+    textAlign: "center",
+    transition: "color 0.3s ease",
+  },
+  navButton: {
+    background: "none",
+    border: "none",
+    fontSize: "20px",
+    cursor: "pointer",
+  },
+  citationIndex: {
+    textAlign: "center",
+    marginTop: "5px",
+  },
 };
 
 export default PromiseCard;
