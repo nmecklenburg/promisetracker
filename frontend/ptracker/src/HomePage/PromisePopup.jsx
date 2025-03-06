@@ -103,7 +103,10 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
 
   // Add new citation
   const handleAddCitation = async () => {
-    if (!newCitationUrl.trim()) return;
+    if (!newCitationUrl.trim() || !newCitationExtract.trim()){
+      alert("Please enter a valid citation URL and quote");
+      return;
+    }
 
     try {
       const currentDate = new Date().toISOString();

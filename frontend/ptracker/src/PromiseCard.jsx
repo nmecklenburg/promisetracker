@@ -172,50 +172,71 @@ const PromiseCard = ({ candidateId }) => {
         </div>
       </div>
 
-      <h1>Top Promises to Watch</h1>
-      {promises.slice(0, 4).map((promise) => {
-        const { text: statusText, color: statusColor } = getStatusDetails(
-          promise.status
-        );
-        const citations = citationsByPromise[promise.id] || [];
-        const currentCitation =
-          citations[currentCitationIndex[promise.id]] || {};
+      <h1 style={styles.topPromisesTitle}>Top Promises to Watch</h1>
+      <div style={styles.promiseGrid}>
+        {promises.slice(0, 4).map((promise) => {
+          const { text: statusText, color: statusColor } = getStatusDetails(
+            promise.status
+          );
+          const citations = citationsByPromise[promise.id] || [];
+          const currentCitation =
+            citations[currentCitationIndex[promise.id]] || {};
 
-        return (
-          <div
-            key={promise.id}
-            className="card"
-            style={{ borderColor: statusColor }}
-          >
-            <p className="description">{promise.text}</p>
-            <div className="status">
-              <strong>Status:</strong> <StatusLabel status={statusText} />
-            </div>
-            <div className="category">
-              <strong>Category:</strong> <CategoryLabel category={"Economy"} />
-            </div>
-
-            {/* Related Articles with Navigation */}
-            {citations.length > 0 && (
-              <div style={styles.relatedArticlesSection}>
-                <strong>Related Articles:</strong>
-                <div style={styles.articleSwipeContainer}>
-                  <button style={styles.navButton} onClick={() => handlePrevCitation(promise.id)}>◀</button>
-                  <div style={styles.articleCard}>
-                    <a href={currentCitation.url} target="_blank" rel="noopener noreferrer">
-                      {`"${currentCitation.extract}"` || "Read more"}
-                    </a>
-                  </div>
-                  <button style={styles.navButton} onClick={() => handleNextCitation(promise.id)}>▶</button>
-                </div>
-                <div style={styles.citationIndex}>
-                  {`${currentCitationIndex[promise.id] + 1} / ${citations.length}`}
-                </div>
+          return (
+            <div
+              key={promise.id}
+              style={{
+                ...styles.card,
+                border: `4px solid ${statusColor}`, // Explicitly set the border width, style, and color
+              }}
+            >
+              <p style={styles.description}>{promise.text}</p>
+              <div style={styles.status}>
+                <strong>Status:</strong> <StatusLabel status={statusText} />
               </div>
-            )}
-          </div>
-        );
-      })}
+              <div style={styles.category}>
+                <strong>Category:</strong>{" "}
+                <CategoryLabel category={"Economy"} />
+              </div>
+
+              {/* Related Articles with Navigation */}
+              {citations.length > 0 && (
+                <div style={styles.relatedArticlesSection}>
+                  <strong>Related Articles:</strong>
+                  <div style={styles.articleSwipeContainer}>
+                    <button
+                      style={styles.navButton}
+                      onClick={() => handlePrevCitation(promise.id)}
+                    >
+                      ◀
+                    </button>
+                    <div style={styles.articleCard}>
+                      <a
+                        href={currentCitation.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {`"${currentCitation.extract}"` || "Read more"}
+                      </a>
+                    </div>
+                    <button
+                      style={styles.navButton}
+                      onClick={() => handleNextCitation(promise.id)}
+                    >
+                      ▶
+                    </button>
+                  </div>
+                  <div style={styles.citationIndex}>
+                    {`${currentCitationIndex[promise.id] + 1} / ${
+                      citations.length
+                    }`}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 
@@ -236,8 +257,37 @@ const PromiseCard = ({ candidateId }) => {
 };
 
 const styles = {
+  topPromisesTitle: {
+    marginTop: "60px"
+  },
+  promiseGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "40px",
+    marginTop: "20px",
+    marginLeft: "100px",
+    marginRight: "100px",
+  },
+  card: {
+    padding: "15px",
+    borderRadius: "20px",
+    backgroundColor: "white",
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+    transition: "transform 0.2s ease-in-out",
+  },
+  description: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    marginBottom: "20px",
+  },
+  status: {
+    marginBottom: "20px",
+  },
+  category: {
+    marginBottom: "20px",
+  },
   relatedArticlesSection: {
-    marginTop: "10px",
+    marginTop: "20px",
   },
   articleSwipeContainer: {
     display: "flex",
@@ -268,7 +318,7 @@ const styles = {
   },
   citationIndex: {
     textAlign: "center",
-    marginTop: "5px",
+    marginTop: "10px",
   },
 };
 
