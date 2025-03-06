@@ -299,7 +299,7 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
               {isAddingCitation ? (
                 <>
                   <input type="text" placeholder="Citation URL" value={newCitationUrl} onChange={(e) => setNewCitationUrl(e.target.value)} style={styles.inputField} />
-                  <input type="text" placeholder="Quote (Optional)" value={newCitationExtract} onChange={(e) => setNewCitationExtract(e.target.value)} style={styles.inputField} />
+                  <input type="text" placeholder="Quote from source" value={newCitationExtract} onChange={(e) => setNewCitationExtract(e.target.value)} style={styles.inputField} />
                   <div style={styles.buttonGroup}>
                   <button style={styles.addButton} onClick={handleAddCitation}>Add Citation</button>
                     <button style={styles.cancelButton} onClick={() => setIsAddingCitation(false)}>Cancel</button>
