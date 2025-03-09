@@ -26,6 +26,7 @@ const PromisePopup = ({
   const [newActionText, setNewActionText] = useState("");
   const [isAddingAction, setIsAddingAction] = useState(false);
   const [editableText, setEditableText] = useState(promise.text);
+  const [deleteRequested, setDeleteRequested] = useState(false);
 
   useEffect(() => {
     console.log(promise.id);
@@ -53,6 +54,15 @@ const PromisePopup = ({
     1: "Compromised",
     2: "Delivered",
     3: "Broken",
+  };
+
+  const handleDeletePromise = async () => {
+    try {
+      setDeleteRequested(true); // Disable button and change text
+      console.log("Delete request sent for promise:", promise.id);
+    } catch (error) {
+      console.error("Error requesting delete:", error);
+    }
   };
 
   // Handle updating the promise text
@@ -446,6 +456,25 @@ const PromisePopup = ({
             </div>
           )}
         </div>
+        <button
+          style={{
+            width: "100%",
+            padding: "10px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            color: "#fff",
+            backgroundColor: deleteRequested ? "#888" : "#d9534f",
+            border: "none",
+            borderRadius: "6px",
+            cursor: deleteRequested ? "not-allowed" : "pointer",
+            marginTop: "15px",
+            transition: "background-color 0.3s",
+          }}
+          onClick={handleDeletePromise}
+          disabled={deleteRequested}
+        >
+          {deleteRequested ? "Requested Deletion" : "Delete Promise"}
+        </button>
       </div>
     </div>
   );
