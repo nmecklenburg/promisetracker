@@ -134,6 +134,14 @@ const PromisesTable = ({ candidate, isJournalist }) => {
     );
   };
 
+  const updatePromiseText = (promiseId, newText) => {
+    setPromises((prevPromises) =>
+      prevPromises.map((p) =>
+        p.id === promiseId ? { ...p, text: newText } : p
+      )
+    );
+  };  
+
   const openPopup = (promise, editMode) => {
     setEditMode(editMode);
     setSelectedPromise(promise);
@@ -262,6 +270,7 @@ const PromisesTable = ({ candidate, isJournalist }) => {
         onClose={closePopup}
         editMode={editMode}
         updatePromiseStatus={updatePromiseStatus}
+        updatePromiseText={updatePromiseText}
       />
     </div>
   );

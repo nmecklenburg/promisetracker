@@ -6,7 +6,7 @@ const LoginPage = ({ setIsJournalist }) => {
 
   const handleLoginSignup = () => {
     setIsJournalist(true);
-    navigate("/"); // Redirect to the home page
+    navigate("/politicians"); // Redirect to the home page
   };
 
   return (
@@ -14,9 +14,6 @@ const LoginPage = ({ setIsJournalist }) => {
       <h2>I'm a journalist and I want to contribute to the promise tracker!</h2>
       <button style={styles.button} onClick={handleLoginSignup}>
         Log In
-      </button>
-      <button style={styles.button} onClick={handleLoginSignup}>
-        Sign Up
       </button>
     </div>
   );

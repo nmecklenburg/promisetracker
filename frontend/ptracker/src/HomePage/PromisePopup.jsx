@@ -3,7 +3,14 @@ import CategoryLabel from "./CategoryLabel";
 import api from "../api";
 import StatusLabel from "./StatusLabel";
 
-const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseStatus }) => {
+const PromisePopup = ({
+  promise,
+  candidateId,
+  onClose,
+  editMode,
+  updatePromiseStatus,
+  updatePromiseText,
+}) => {
   if (!promise) return null;
 
   const [actions, setActions] = useState([]);
@@ -18,9 +25,10 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
   const [isAddingCitation, setIsAddingCitation] = useState(false);
   const [newActionText, setNewActionText] = useState("");
   const [isAddingAction, setIsAddingAction] = useState(false);
+  const [editableText, setEditableText] = useState(promise.text);
 
   useEffect(() => {
-    console.log(promise.id)
+    console.log(promise.id);
     const fetchData = async () => {
       try {
         const actionsResponse = await api.get(
@@ -47,13 +55,34 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
     3: "Broken",
   };
 
+  // Handle updating the promise text
+  const handleUpdatePromiseText = async () => {
+    if (editableText.trim() !== promise.text) {
+      try {
+        await api.patch(
+          `/api/v1/candidates/${candidateId}/promises/${promise.id}`,
+          {
+            text: editableText,
+          }
+        );
+        console.log("Promise text updated:", editableText);
+        updatePromiseText(promise.id, editableText); // Update in table
+      } catch (error) {
+        console.error("Error updating promise text:", error);
+      }
+    }
+  };
+
   // Save status change
   const handleSaveStatus = async (status) => {
     if (editMode) {
       try {
-        const response = await api.patch(`/api/v1/candidates/${candidateId}/promises/${promise.id}`, {
-          status: status
-        });
+        const response = await api.patch(
+          `/api/v1/candidates/${candidateId}/promises/${promise.id}`,
+          {
+            status: status,
+          }
+        );
 
         console.log("Status updated:", response.data);
         updatePromiseStatus(promise.id, status);
@@ -64,7 +93,11 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
   };
 
   const handleAddAction = async () => {
-    if (!newActionText.trim() || !newCitationUrl.trim() || !newCitationExtract.trim()) {
+    if (
+      !newActionText.trim() ||
+      !newCitationUrl.trim() ||
+      !newCitationExtract.trim()
+    ) {
       alert("Please enter an action description and a valid citation.");
       return;
     }
@@ -82,14 +115,14 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
             {
               date: currentDate,
               extract: newCitationExtract,
-              url: newCitationUrl
-            }
+              url: newCitationUrl,
+            },
           ],
-          promises: [promise.id]
+          promises: [promise.id],
         }
       );
-      console.log(response.data)
-      console.log("created action: ", currentDate, newActionText, promise.id)
+      console.log(response.data);
+      console.log("created action: ", currentDate, newActionText, promise.id);
 
       setActions([...actions, response.data]); // Update UI with new action
       setNewActionText("");
@@ -98,12 +131,18 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
       setIsAddingAction(false);
     } catch (error) {
       console.error("Error adding action:", error);
+      console.log(
+        "action: ",
+        newCitationUrl,
+        newActionText,
+        newCitationExtract
+      );
     }
   };
 
   // Add new citation
   const handleAddCitation = async () => {
-    if (!newCitationUrl.trim() || !newCitationExtract.trim()){
+    if (!newCitationUrl.trim() || !newCitationExtract.trim()) {
       alert("Please enter a valid citation URL and quote");
       return;
     }
@@ -115,7 +154,7 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
         {
           date: currentDate,
           url: newCitationUrl,
-          extract: newCitationExtract
+          extract: newCitationExtract,
         }
       );
       console.log("action created: ", response.data);
@@ -146,7 +185,10 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
           [actionId]: response.data.data,
         }));
       } catch (error) {
-        console.error(`Error fetching citations for action ${actionId}:`, error);
+        console.error(
+          `Error fetching citations for action ${actionId}:`,
+          error
+        );
       }
     }
   };
@@ -168,10 +210,37 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
   return (
     <div style={styles.overlay}>
       <div style={styles[getStatusLabel(selectedStatus)]}>
-        <button style={styles.closeButton} onClick={onClose}>&times;</button>
-        {editMode && <div style={styles.editModeBanner}>You are editing this promise. Changes are saved automatically.</div>}
-
-        <h2 style={styles.title}>{promise.text}</h2>
+        <button style={styles.closeButton} onClick={onClose}>
+          &times;
+        </button>
+        {editMode && (
+          <div style={styles.editModeBanner}>
+            You are editing this promise. Changes are saved automatically.
+          </div>
+        )}
+        {editMode ? (
+          <input
+            type="text"
+            value={editableText}
+            onChange={(e) => setEditableText(e.target.value)}
+            onBlur={handleUpdatePromiseText}
+            style={{
+              width: "100%",
+              fontSize: "20px",
+              fontWeight: "bold",
+              textAlign: "center",
+              marginBottom: "15px",
+              background: "none",
+              outline: "none",
+              border: "2px solid #bababa",
+              borderRadius: "8px",
+              paddingTop: "5px",
+              paddingBottom: "5px",
+            }}
+          />
+        ) : (
+          <h2 style={styles.title}>{promise.text}</h2>
+        )}
 
         {/* Status Section */}
         <div style={styles.statusContainer}>
@@ -222,14 +291,20 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
                     style={styles.toggleButton}
                     onClick={() => toggleActionCitations(action.id)}
                   >
-                    {expandedActions[action.id] ? "Hide Sources" : "View Sources"}
+                    {expandedActions[action.id]
+                      ? "Hide Sources"
+                      : "View Sources"}
                   </div>
                   {expandedActions[action.id] && (
                     <ul style={styles.citationList}>
                       {citationsByAction[action.id]?.length > 0 ? (
                         citationsByAction[action.id].map((citation) => (
                           <li key={citation.url} style={styles.citationItem}>
-                            <a href={citation.url} target="_blank" rel="noopener noreferrer">
+                            <a
+                              href={citation.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               {`"${citation.extract}"`}
                             </a>
                           </li>
@@ -269,12 +344,24 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
                     style={styles.inputField}
                   />
                   <div style={styles.buttonGroup}>
-                    <button style={styles.addButton} onClick={handleAddAction}>Add Action</button>
-                    <button style={styles.cancelButton} onClick={() => setIsAddingAction(false)}>Cancel</button>
+                    <button style={styles.addButton} onClick={handleAddAction}>
+                      Add Action
+                    </button>
+                    <button
+                      style={styles.cancelButton}
+                      onClick={() => setIsAddingAction(false)}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </>
               ) : (
-                <button style={styles.addActionButton} onClick={() => setIsAddingAction(true)}>+ Add Action</button>
+                <button
+                  style={styles.addActionButton}
+                  onClick={() => setIsAddingAction(true)}
+                >
+                  + Add Action
+                </button>
               )}
             </div>
           )}
@@ -286,30 +373,75 @@ const PromisePopup = ({ promise, candidateId, onClose, editMode, updatePromiseSt
 
           {citations.length > 0 && (
             <div style={styles.articleSwipeContainer}>
-              <button style={styles.navButton} onClick={prevCitation} disabled={citations.length <= 1}>◀</button>
+              <button
+                style={styles.navButton}
+                onClick={prevCitation}
+                disabled={citations.length <= 1}
+              >
+                ◀
+              </button>
               <div style={styles.articleCard}>
-                <a href={citations[currentCitationIndex].url} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={citations[currentCitationIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {`"${citations[currentCitationIndex].extract}"`}
                 </a>
               </div>
-              <button style={styles.navButton} onClick={nextCitation} disabled={citations.length <= 1}>▶</button>
+              <button
+                style={styles.navButton}
+                onClick={nextCitation}
+                disabled={citations.length <= 1}
+              >
+                ▶
+              </button>
             </div>
           )}
-          <div style={styles.citationIndex}>{`${currentCitationIndex + 1} / ${citations.length}`}</div>
+          <div style={styles.citationIndex}>{`${currentCitationIndex + 1} / ${
+            citations.length
+          }`}</div>
 
           {editMode && (
             <div style={styles.addCitationContainer}>
               {isAddingCitation ? (
                 <>
-                  <input type="text" placeholder="Citation URL" value={newCitationUrl} onChange={(e) => setNewCitationUrl(e.target.value)} style={styles.inputField} />
-                  <input type="text" placeholder="Quote from source" value={newCitationExtract} onChange={(e) => setNewCitationExtract(e.target.value)} style={styles.inputField} />
+                  <input
+                    type="text"
+                    placeholder="Citation URL"
+                    value={newCitationUrl}
+                    onChange={(e) => setNewCitationUrl(e.target.value)}
+                    style={styles.inputField}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Quote from source"
+                    value={newCitationExtract}
+                    onChange={(e) => setNewCitationExtract(e.target.value)}
+                    style={styles.inputField}
+                  />
                   <div style={styles.buttonGroup}>
-                  <button style={styles.addButton} onClick={handleAddCitation}>Add Citation</button>
-                    <button style={styles.cancelButton} onClick={() => setIsAddingCitation(false)}>Cancel</button>
+                    <button
+                      style={styles.addButton}
+                      onClick={handleAddCitation}
+                    >
+                      Add Citation
+                    </button>
+                    <button
+                      style={styles.cancelButton}
+                      onClick={() => setIsAddingCitation(false)}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </>
               ) : (
-                    <button style={styles.addCitationButton} onClick={() => setIsAddingCitation(true)}>+ Add Related Article</button>
+                <button
+                  style={styles.addCitationButton}
+                  onClick={() => setIsAddingCitation(true)}
+                >
+                  + Add Related Article
+                </button>
               )}
             </div>
           )}
