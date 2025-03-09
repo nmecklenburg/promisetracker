@@ -3,6 +3,7 @@ import api from "../api";
 import { FaPen } from "react-icons/fa";
 import StatusLabel from "./StatusLabel";
 import CategoryLabel from "./CategoryLabel";
+import PromisePopup from "./PromisePopup";
 
 const styles = {
   table: {
@@ -17,6 +18,11 @@ const styles = {
     borderBottom: "1px solid #EEEEEE",
     padding: "12px",
     textAlign: "left",
+  },
+  tdLink: {
+    borderBottom: "1px solid #EEEEEE",
+    padding: "12px",
+    textDecoration: "underline",
   },
   td: {
     borderBottom: "1px solid #EEEEEE",
@@ -69,7 +75,7 @@ const styles = {
 
 const statusLabels = ["Progressing", "Compromised", "Delivered", "Broken"];
 
-const PromisesTable = ({ candidate }) => {
+const PromisesTable = ({ candidate, isJournalist }) => {
   if (!candidate) {
     return <p>No candidates found</p>;
   }
@@ -77,6 +83,8 @@ const PromisesTable = ({ candidate }) => {
   const [promises, setPromises] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const promisesPerPage = 10;
+  const [selectedPromise, setSelectedPromise] = useState(null);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,7 +92,17 @@ const PromisesTable = ({ candidate }) => {
         const response = await api.get(
           `/api/v1/candidates/${candidate.id}/promises`
         );
-        setPromises(response.data.data);
+
+        // Sort the promises by citations (descending)
+        // If citations are equal, sort by text length (ascending)
+        const sortedPromises = response.data.data.sort((a, b) => {
+          if (b.citations !== a.citations) {
+            return b.citations - a.citations; // Sort by most citations first
+          }
+          return a.text.length - b.text.length; // If citations are equal, sort by shortest text
+        });
+
+        setPromises(sortedPromises);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -108,6 +126,31 @@ const PromisesTable = ({ candidate }) => {
     }
   };
 
+  const updatePromiseStatus = (promiseId, newStatus) => {
+    setPromises((prevPromises) =>
+      prevPromises.map((p) =>
+        p.id === promiseId ? { ...p, status: newStatus } : p
+      )
+    );
+  };
+
+  const updatePromiseText = (promiseId, newText) => {
+    setPromises((prevPromises) =>
+      prevPromises.map((p) =>
+        p.id === promiseId ? { ...p, text: newText } : p
+      )
+    );
+  };  
+
+  const openPopup = (promise, editMode) => {
+    setEditMode(editMode);
+    setSelectedPromise(promise);
+  };
+
+  const closePopup = () => {
+    setSelectedPromise(null);
+  };
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={styles.table}>
@@ -123,30 +166,28 @@ const PromisesTable = ({ candidate }) => {
         <tbody>
           {currentPromises.map((promise) => (
             <tr key={promise.id}>
-              <td style={styles.td}>{promise.text}</td>
+              <td style={styles.tdLink} onClick={() => openPopup(promise)}>
+                {promise.text}
+              </td>
               <td style={styles.td}>
                 <CategoryLabel key="Economy" category="Economy" />
                 <CategoryLabel key="Health" category="Health" />
               </td>
               <td style={{ ...styles.td, ...styles.centeredText }}>
-                {promise.citations ? (
-                  <a
-                    href="#"
-                    style={{ color: "#3498db", textDecoration: "underline" }}
-                  >
-                    {promise.citations}
-                  </a>
-                ) : (
-                  "N/A"
-                )}
+                {promise.citations ? promise.citations : "N/A"}
               </td>
               <td style={styles.td}>
                 <StatusLabel status={statusLabels[promise.status]} />
               </td>
               <td style={styles.td}>
-                <button style={styles.editButton}>
-                  <FaPen />
-                </button>
+                {isJournalist && (
+                  <button
+                    style={styles.editButton}
+                    onClick={() => openPopup(promise, true)}
+                  >
+                    <FaPen />
+                  </button>
+                )}
               </td>
             </tr>
           ))}
@@ -223,6 +264,14 @@ const PromisesTable = ({ candidate }) => {
           </div>
         </div>
       )}
+      <PromisePopup
+        promise={selectedPromise}
+        candidateId={candidate.id}
+        onClose={closePopup}
+        editMode={editMode}
+        updatePromiseStatus={updatePromiseStatus}
+        updatePromiseText={updatePromiseText}
+      />
     </div>
   );
 };

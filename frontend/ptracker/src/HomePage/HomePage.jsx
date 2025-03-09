@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import PromiseCard from "../PromiseCard";
 
-const HomePage = () => {
+const HomePage = ({isJournalist}) => {
   const { candidateId } = useParams();
   const resolvedCandidateId = candidateId || "3";
 
@@ -15,7 +15,6 @@ const HomePage = () => {
   const fetchData = async () => {
     try {
       const response = await api.get(`/api/v1/candidates/${resolvedCandidateId}`); // have daniel lurie as default for now
-      console.log(response.data);
       setData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -34,7 +33,7 @@ const HomePage = () => {
     <>
       <CandidateProfile candidate={data} />
       <PromiseCard candidateId={resolvedCandidateId} />
-      <PromisesList candidate={data} />
+      <PromisesList candidate={data} isJournalist={isJournalist}/>
     </>
   );
 };
