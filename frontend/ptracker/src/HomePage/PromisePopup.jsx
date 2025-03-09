@@ -288,7 +288,11 @@ const PromisePopup = ({
             <StatusLabel status={statusMap[selectedStatus]} />
           )}
         </div>
-
+        {/* Category */}
+        <div style={styles.statusContainer}>
+          <span style={styles.statusLabel}>Categories:</span>
+          <CategoryLabel category="Economy" />
+        </div>
         {/* Actions and Citations */}
         <div style={styles.section}>
           <strong>Progress Updates:</strong>
@@ -467,13 +471,13 @@ const PromisePopup = ({
             border: "none",
             borderRadius: "6px",
             cursor: deleteRequested ? "not-allowed" : "pointer",
-            marginTop: "15px",
+            marginTop: "5px",
             transition: "background-color 0.3s",
           }}
           onClick={handleDeletePromise}
           disabled={deleteRequested}
         >
-          {deleteRequested ? "Requested Deletion" : "Delete Promise"}
+          {deleteRequested ? "Requested Deletion" : "Request to Delete Promise"}
         </button>
       </div>
     </div>
@@ -589,10 +593,10 @@ const styles = {
     fontWeight: "bold",
   },
   section: {
-    marginBottom: "15px",
+    marginBottom: "10px",
   },
   actionContainer: {
-    maxHeight: "120px",
+    maxHeight: "110px",
     overflowY: "auto",
     border: "1px solid #ddd",
     borderRadius: "6px",
