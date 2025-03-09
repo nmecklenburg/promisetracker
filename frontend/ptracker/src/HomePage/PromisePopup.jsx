@@ -460,25 +460,29 @@ const PromisePopup = ({
             </div>
           )}
         </div>
-        <button
-          style={{
-            width: "100%",
-            padding: "10px",
-            fontSize: "16px",
-            fontWeight: "bold",
-            color: "#fff",
-            backgroundColor: deleteRequested ? "#888" : "#d9534f",
-            border: "none",
-            borderRadius: "6px",
-            cursor: deleteRequested ? "not-allowed" : "pointer",
-            marginTop: "5px",
-            transition: "background-color 0.3s",
-          }}
-          onClick={handleDeletePromise}
-          disabled={deleteRequested}
-        >
-          {deleteRequested ? "Requested Deletion" : "Request to Delete Promise"}
-        </button>
+        {editMode && (
+          <button
+            style={{
+              width: "100%",
+              padding: "10px",
+              fontSize: "16px",
+              fontWeight: "bold",
+              color: "#fff",
+              backgroundColor: deleteRequested ? "#888" : "#d9534f",
+              border: "none",
+              borderRadius: "6px",
+              cursor: deleteRequested ? "not-allowed" : "pointer",
+              marginTop: "5px",
+              transition: "background-color 0.3s",
+            }}
+            onClick={handleDeletePromise}
+            disabled={deleteRequested}
+          >
+            {deleteRequested
+              ? "Requested Deletion"
+              : "Request to Delete Promise"}
+          </button>
+        )}
       </div>
     </div>
   );
